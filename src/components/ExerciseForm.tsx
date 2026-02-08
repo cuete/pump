@@ -16,9 +16,10 @@ export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
   const [weight, setWeight] = useState(exercise.weight);
   const [sets, setSets] = useState(exercise.sets);
   const [time, setTime] = useState(exercise.time);
+  const [distance, setDistance] = useState(exercise.distance);
 
   async function handleSave() {
-    await db.exercises.update(exercise.id!, { name, repetitions, weight, sets, time });
+    await db.exercises.update(exercise.id!, { name, repetitions, weight, sets, time, distance });
     onClose();
   }
 
@@ -51,7 +52,7 @@ export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
             />
           </div>
           <div className="form-group">
-            <label>Weight</label>
+            <label>Weight (lbs)</label>
             <input
               type="number"
               inputMode="numeric"
@@ -76,6 +77,16 @@ export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
               placeholder="mm:ss"
               value={time}
               onChange={(e) => setTime(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label>Distance (mi)</label>
+            <input
+              type="number"
+              inputMode="decimal"
+              step="0.1"
+              value={distance}
+              onChange={(e) => setDistance(Number(e.target.value))}
             />
           </div>
         </div>

@@ -31,6 +31,15 @@ class PumpDB extends Dexie {
         if (ex.setsCompleted === undefined) ex.setsCompleted = 0;
       });
     });
+    this.version(4).stores({
+      routines: '++id, date',
+      exercises: '++id, routineId',
+      exercisePhotos: '++id, exerciseId',
+    }).upgrade(tx => {
+      return tx.table('exercises').toCollection().modify(ex => {
+        if (ex.distance === undefined) ex.distance = 0;
+      });
+    });
   }
 }
 

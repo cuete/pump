@@ -14,6 +14,7 @@ export interface Exercise {
   sets: number;
   setsCompleted: number;
   time: string; // mm:ss
+  distance: number; // miles
   order: number;
 }
 

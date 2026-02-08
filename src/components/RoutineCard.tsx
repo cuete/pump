@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { ExerciseRow } from './ExerciseRow';
@@ -15,6 +16,8 @@ interface Props {
 export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
   const [editing, setEditing] = useState<Exercise | null>(null);
   const [renaming, setRenaming] = useState(false);
+  const [showCopyDialog, setShowCopyDialog] = useState(false);
+  const [copyDate, setCopyDate] = useState('');
 
   const exercises = useLiveQuery(
     () => db.exercises.where('routineId').equals(routine.id!).sortBy('order'),
@@ -31,6 +34,7 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
       sets: 0,
       setsCompleted: 0,
       time: '00:00',
+      distance: 0,
       order,
     });
     const created = await db.exercises.get(id);
@@ -47,6 +51,41 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
     if (newName.trim() && newName !== routine.name) {
       await db.routines.update(routine.id!, { name: newName.trim() });
     }
+  }
+
+  async function handleCopy() {
+    if (!copyDate) return;
+
+    // Get the highest order for the target date
+    const existingRoutines = await db.routines.where('date').equals(copyDate).toArray();
+    const maxOrder = existingRoutines.reduce((max, r) => Math.max(max, r.order), 0);
+
+    // Copy the routine
+    const newRoutineId = await db.routines.add({
+      date: copyDate,
+      name: routine.name,
+      order: maxOrder + 1,
+    });
+
+    // Copy all exercises with setsCompleted reset to 0
+    if (exercises) {
+      for (const ex of exercises) {
+        await db.exercises.add({
+          routineId: newRoutineId as number,
+          name: ex.name,
+          repetitions: ex.repetitions,
+          weight: ex.weight,
+          sets: ex.sets,
+          setsCompleted: 0, // Reset completed sets
+          time: ex.time,
+          distance: ex.distance,
+          order: ex.order,
+        });
+      }
+    }
+
+    setShowCopyDialog(false);
+    setCopyDate('');
   }
 
   return (
@@ -73,6 +112,16 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
         )}
         <span className="routine-count">{exercises?.length ?? 0} exercises</span>
         <button
+          className="btn-icon copy"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowCopyDialog(true);
+          }}
+          title="Copy to another day"
+        >
+          📋
+        </button>
+        <button
           className="btn-icon delete"
           onClick={(e) => {
             e.stopPropagation();
@@ -98,6 +147,41 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
           onClose={() => setEditing(null)}
           onDelete={deleteExercise}
         />
+      )}
+      {showCopyDialog && createPortal(
+        <div className="modal-overlay" onClick={() => setShowCopyDialog(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Copy Routine</h3>
+              <button className="btn-icon" onClick={() => setShowCopyDialog(false)}>&times;</button>
+            </div>
+            <div className="form-group">
+              <label>Select Date</label>
+              <input
+                type="date"
+                value={copyDate}
+                onChange={(e) => setCopyDate(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="modal-actions">
+              <button
+                className="btn btn-danger btn-small"
+                onClick={() => setShowCopyDialog(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleCopy}
+                disabled={!copyDate}
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
