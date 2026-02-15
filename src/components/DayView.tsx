@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db';
+import { useRoutines, useCreateRoutine, useDeleteRoutine } from '../hooks/useApi';
 import { RoutineCard } from './RoutineCard';
 
 interface Props {
@@ -19,12 +18,11 @@ function formatDate(dateStr: string): string {
 }
 
 export function DayView({ date, onBack }: Props) {
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const routines = useLiveQuery(
-    () => db.routines.where('date').equals(date).sortBy('order'),
-    [date],
-  );
+  const { routines, isLoading } = useRoutines(date);
+  const createRoutineMutation = useCreateRoutine();
+  const deleteRoutineMutation = useDeleteRoutine();
 
   // Auto-expand newest (last in order, first after reverse) on initial load
   const reversed = routines?.slice().reverse();
@@ -32,22 +30,27 @@ export function DayView({ date, onBack }: Props) {
   const activeId = expandedId !== undefined ? expandedId : newestId;
 
   async function addRoutine() {
-    const order = (routines?.length ?? 0) + 1;
-    const id = await db.routines.add({ date, name: `Routine ${order}`, order });
-    setExpandedId(id as number);
-  }
-
-  async function deleteRoutine(id: number) {
-    const exercises = await db.exercises.where('routineId').equals(id).toArray();
-    for (const ex of exercises) {
-      await db.exercisePhotos.where('exerciseId').equals(ex.id!).delete();
+    try {
+      const order = (routines?.length ?? 0) + 1;
+      const result = await createRoutineMutation({ date, name: `Routine ${order}`, order });
+      setExpandedId(result.id);
+    } catch (error) {
+      console.error('Failed to create routine:', error);
+      alert('Failed to create routine. Please try again.');
     }
-    await db.exercises.where('routineId').equals(id).delete();
-    await db.routines.delete(id);
-    if (activeId === id) setExpandedId(null);
   }
 
-  function handleToggle(id: number) {
+  async function deleteRoutine(id: string) {
+    try {
+      await deleteRoutineMutation(id, date);
+      if (activeId === id) setExpandedId(null);
+    } catch (error) {
+      console.error('Failed to delete routine:', error);
+      alert('Failed to delete routine. Please try again.');
+    }
+  }
+
+  function handleToggle(id: string) {
     setExpandedId(activeId === id ? null : id);
   }
 
@@ -60,18 +63,24 @@ export function DayView({ date, onBack }: Props) {
         <h2>{formatDate(date)}</h2>
       </div>
       <div className="day-body">
-        {reversed?.map((r) => (
-          <RoutineCard
-            key={r.id}
-            routine={r}
-            onDelete={deleteRoutine}
-            expanded={activeId === r.id}
-            onToggle={() => handleToggle(r.id!)}
-          />
-        ))}
-        <button className="btn btn-primary" onClick={addRoutine}>
-          + Add Routine
-        </button>
+        {isLoading ? (
+          <div>Loading...</div>
+        ) : (
+          <>
+            {reversed?.map((r) => (
+              <RoutineCard
+                key={r.id}
+                routine={r}
+                onDelete={deleteRoutine}
+                expanded={activeId === r.id}
+                onToggle={() => handleToggle(r.id)}
+              />
+            ))}
+            <button className="btn btn-primary" onClick={addRoutine}>
+              + Add Routine
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

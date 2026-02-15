@@ -1,17 +1,14 @@
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db';
-import type { Exercise } from '../types';
+import { usePhotos, useUpdateExercise } from '../hooks/useApi';
+import type { ExerciseResponse } from '../api/client';
 
 interface Props {
-  exercise: Exercise;
-  onTap: (exercise: Exercise) => void;
+  exercise: ExerciseResponse;
+  onTap: (exercise: ExerciseResponse) => void;
 }
 
 export function ExerciseRow({ exercise, onTap }: Props) {
-  const photoCount = useLiveQuery(
-    () => db.exercisePhotos.where('exerciseId').equals(exercise.id!).count(),
-    [exercise.id],
-  );
+  const { photoCount } = usePhotos(exercise.id);
+  const updateExerciseMutation = useUpdateExercise();
 
   const details = [
     exercise.repetitions ? `x${exercise.repetitions}` : null,
@@ -23,10 +20,14 @@ export function ExerciseRow({ exercise, onTap }: Props) {
 
   async function addSet(e: React.MouseEvent) {
     e.stopPropagation();
-    await db.exercises.update(exercise.id!, {
-      sets: exercise.sets + 1,
-      setsCompleted: exercise.setsCompleted + 1,
-    });
+    try {
+      await updateExerciseMutation(exercise.id, exercise.routineId, {
+        sets: exercise.sets + 1,
+        setsCompleted: exercise.setsCompleted + 1,
+      });
+    } catch (error) {
+      console.error('Failed to add set:', error);
+    }
   }
 
   async function toggleSet(index: number, e: React.MouseEvent) {
@@ -34,7 +35,11 @@ export function ExerciseRow({ exercise, onTap }: Props) {
     const newCompleted = index < exercise.setsCompleted
       ? index
       : index + 1;
-    await db.exercises.update(exercise.id!, { setsCompleted: newCompleted });
+    try {
+      await updateExerciseMutation(exercise.id, exercise.routineId, { setsCompleted: newCompleted });
+    } catch (error) {
+      console.error('Failed to toggle set:', error);
+    }
   }
 
   return (

@@ -1,15 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { MonthCalendar } from './components/MonthCalendar';
 import { DayView } from './components/DayView';
+import { DataMigration } from './components/DataMigration';
+import { db } from './db';
 
 type View = { type: 'calendar' } | { type: 'day'; date: string };
 
 export default function App() {
   const { user, loading } = useAuth();
   const [view, setView] = useState<View>({ type: 'calendar' });
+  const [showMigration, setShowMigration] = useState(false);
+  const [checkingMigration, setCheckingMigration] = useState(true);
 
-  if (loading) {
+  // Check if IndexedDB has data that needs migration
+  useEffect(() => {
+    async function checkForLocalData() {
+      try {
+        const routineCount = await db.routines.count();
+        setShowMigration(routineCount > 0);
+      } catch (error) {
+        console.error('Error checking for local data:', error);
+      } finally {
+        setCheckingMigration(false);
+      }
+    }
+
+    if (user) {
+      checkForLocalData();
+    }
+  }, [user]);
+
+  if (loading || checkingMigration) {
     return <div className="loading">Loading...</div>;
   }
 
@@ -28,6 +50,7 @@ export default function App() {
 
   return (
     <div className="app">
+      {showMigration && <DataMigration />}
       {view.type === 'calendar' && (
         <MonthCalendar onSelectDay={(date) => setView({ type: 'day', date })} />
       )}

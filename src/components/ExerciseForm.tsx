@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { db } from '../db';
+import { useUpdateExercise } from '../hooks/useApi';
 import { PhotoManager } from './PhotoManager';
-import type { Exercise } from '../types';
+import type { ExerciseResponse } from '../api/client';
 
 interface Props {
-  exercise: Exercise;
+  exercise: ExerciseResponse;
   onClose: () => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
 }
 
 export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
@@ -18,9 +18,16 @@ export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
   const [time, setTime] = useState(exercise.time);
   const [distance, setDistance] = useState(exercise.distance);
 
+  const updateExerciseMutation = useUpdateExercise();
+
   async function handleSave() {
-    await db.exercises.update(exercise.id!, { name, repetitions, weight, sets, time, distance });
-    onClose();
+    try {
+      await updateExerciseMutation(exercise.id, exercise.routineId, { name, repetitions, weight, sets, time, distance });
+      onClose();
+    } catch (error) {
+      console.error('Failed to save exercise:', error);
+      alert('Failed to save exercise. Please try again.');
+    }
   }
 
   return createPortal(
@@ -91,12 +98,12 @@ export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
           </div>
         </div>
 
-        <PhotoManager exerciseId={exercise.id!} />
+        <PhotoManager exerciseId={exercise.id} />
 
         <div className="modal-actions">
           <button
             className="btn btn-danger btn-small"
-            onClick={() => { onDelete(exercise.id!); onClose(); }}
+            onClick={() => { onDelete(exercise.id); onClose(); }}
           >
             Delete
           </button>

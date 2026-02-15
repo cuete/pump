@@ -1,9 +1,8 @@
 import { useRef, useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db';
+import { usePhotos, useUploadPhoto, useDeletePhoto } from '../hooks/useApi';
 
 interface Props {
-  exerciseId: number;
+  exerciseId: string;
 }
 
 async function compressImage(file: File, maxWidth = 1024, quality = 0.7): Promise<Blob> {
@@ -31,46 +30,65 @@ async function compressImage(file: File, maxWidth = 1024, quality = 0.7): Promis
 export function PhotoManager({ exerciseId }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-  const photos = useLiveQuery(
-    () => db.exercisePhotos.where('exerciseId').equals(exerciseId).toArray(),
-    [exerciseId],
-  );
+  const { photos, isLoading } = usePhotos(exerciseId);
+  const uploadPhotoMutation = useUploadPhoto();
+  const deletePhotoMutation = useDeletePhoto();
 
   async function handleCapture(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const blob = await compressImage(file);
-    await db.exercisePhotos.add({ exerciseId, blob, timestamp: Date.now() });
-    if (inputRef.current) inputRef.current.value = '';
+
+    setUploading(true);
+    try {
+      const blob = await compressImage(file);
+      await uploadPhotoMutation(exerciseId, blob);
+      if (inputRef.current) inputRef.current.value = '';
+    } catch (error) {
+      console.error('Failed to upload photo:', error);
+      alert('Failed to upload photo. Please try again.');
+    } finally {
+      setUploading(false);
+    }
   }
 
-  async function handleDelete(id: number) {
-    await db.exercisePhotos.delete(id);
+  async function handleDelete(photoId: string) {
+    try {
+      await deletePhotoMutation(photoId, exerciseId);
+    } catch (error) {
+      console.error('Failed to delete photo:', error);
+      alert('Failed to delete photo. Please try again.');
+    }
   }
 
   return (
     <div className="photo-manager">
       <div className="photo-thumbnails">
-        {photos?.map((p) => {
-          const url = URL.createObjectURL(p.blob);
-          return (
+        {isLoading ? (
+          <div>Loading photos...</div>
+        ) : (
+          photos?.map((p) => (
             <div key={p.id} className="photo-thumb-wrap">
               <img
-                src={url}
+                src={p.url}
                 className="photo-thumb"
-                onClick={() => setViewPhoto(url)}
+                onClick={() => setViewPhoto(p.url)}
                 alt="Exercise"
               />
-              <button className="photo-delete" onClick={() => handleDelete(p.id!)}>
+              <button className="photo-delete" onClick={() => handleDelete(p.id)}>
                 &times;
               </button>
             </div>
-          );
-        })}
+          ))
+        )}
       </div>
-      <button className="btn btn-small" onClick={() => inputRef.current?.click()}>
-        📷 Photo
+      <button
+        className="btn btn-small"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+      >
+        📷 {uploading ? 'Uploading...' : 'Photo'}
       </button>
       <input
         ref={inputRef}

@@ -578,3 +578,52 @@ body {
   max-height: 100%;
   border-radius: var(--radius);
 }
+
+/* Data Migration Panel */
+.migration-panel {
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin: 16px;
+  text-align: center;
+}
+
+.migration-panel.success {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.migration-panel h3 {
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.migration-panel p {
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.migration-status {
+  background: var(--surface-2);
+  padding: 12px;
+  border-radius: 8px;
+  margin: 12px 0;
+  font-size: 0.9rem;
+}
+
+.migration-status.exporting,
+.migration-status.uploading {
+  color: var(--accent);
+}
+
+.migration-status.error {
+  color: #ff6b6b;
+  border: 1px solid #ff6b6b;
+}
+
+.migration-status.success {
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
