@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
+import { SettingsMenu } from './SettingsMenu';
 import type { Routine } from '../types';
 
 interface Props {
@@ -38,6 +39,7 @@ export function MonthCalendar({ onSelectDay }: Props) {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [previewDate, setPreviewDate] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const today = toLocalDateStr(now);
 
   const lastTapRef = useRef<{ date: string; time: number } | null>(null);
@@ -90,7 +92,10 @@ export function MonthCalendar({ onSelectDay }: Props) {
       <div className="month-header">
         <button className="btn-nav" onClick={prevMonth}>&lsaquo;</button>
         <h1 className="app-title">💪 Pump</h1>
-        <button className="btn-nav" onClick={nextMonth}>&rsaquo;</button>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <button className="btn-nav" onClick={nextMonth}>&rsaquo;</button>
+          <button className="btn-icon" onClick={() => setShowSettings(true)}>⚙</button>
+        </div>
       </div>
       <div className="month-label">{MONTH_NAMES[month]} {year}</div>
       <div className="month-grid">
@@ -131,6 +136,7 @@ export function MonthCalendar({ onSelectDay }: Props) {
           )}
         </div>
       )}
+      {showSettings && <SettingsMenu onClose={() => setShowSettings(false)} />}
     </div>
   );
 }
