@@ -31,67 +31,69 @@ export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
           <button className="btn-icon" onClick={onClose}>&times;</button>
         </div>
 
-        <div className="form-group">
-          <label>Name</label>
-          <input
-            type="text"
-            value={name}
-            placeholder="Exercise name"
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-
-        <div className="form-row">
+        <div className="modal-scrollable">
           <div className="form-group">
-            <label>Reps</label>
-            <input
-              type="number"
-              inputMode="numeric"
-              value={repetitions}
-              onChange={(e) => setRepetitions(Number(e.target.value))}
-            />
-          </div>
-          <div className="form-group">
-            <label>Weight (lbs)</label>
-            <input
-              type="number"
-              inputMode="numeric"
-              value={weight}
-              onChange={(e) => setWeight(Number(e.target.value))}
-            />
-          </div>
-          <div className="form-group">
-            <label>Sets</label>
-            <input
-              type="number"
-              inputMode="numeric"
-              value={sets}
-              onChange={(e) => setSets(Number(e.target.value))}
-            />
-          </div>
-          <div className="form-group">
-            <label>Time</label>
+            <label>Name</label>
             <input
               type="text"
-              inputMode="numeric"
-              placeholder="mm:ss"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
+              value={name}
+              placeholder="Exercise name"
+              onChange={(e) => setName(e.target.value)}
             />
           </div>
-          <div className="form-group">
-            <label>Distance (mi)</label>
-            <input
-              type="number"
-              inputMode="decimal"
-              step="0.1"
-              value={distance}
-              onChange={(e) => setDistance(Number(e.target.value))}
-            />
-          </div>
-        </div>
 
-        <PhotoManager exerciseId={exercise.id!} />
+          <div className="form-row">
+            <div className="form-group">
+              <label>Reps</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={repetitions}
+                onChange={(e) => setRepetitions(Number(e.target.value))}
+              />
+            </div>
+            <div className="form-group">
+              <label>Weight (lbs)</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={weight}
+                onChange={(e) => setWeight(Number(e.target.value))}
+              />
+            </div>
+            <div className="form-group">
+              <label>Sets</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={sets}
+                onChange={(e) => setSets(Number(e.target.value))}
+              />
+            </div>
+            <div className="form-group">
+              <label>Time</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="mm:ss"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label>Distance (mi)</label>
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                value={distance}
+                onChange={(e) => setDistance(Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          <PhotoManager exerciseId={exercise.id!} />
+        </div>
 
         <div className="modal-actions">
           <button

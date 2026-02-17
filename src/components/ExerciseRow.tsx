@@ -1,13 +1,27 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { db } from '../db';
 import type { Exercise } from '../types';
 
 interface Props {
   exercise: Exercise;
   onTap: (exercise: Exercise) => void;
+  isDraggable?: boolean;
 }
 
-export function ExerciseRow({ exercise, onTap }: Props) {
+export function ExerciseRow({ exercise, onTap, isDraggable = false }: Props) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: exercise.id!,
+    disabled: !isDraggable,
+  });
   const photoCount = useLiveQuery(
     () => db.exercisePhotos.where('exerciseId').equals(exercise.id!).count(),
     [exercise.id],
@@ -37,8 +51,23 @@ export function ExerciseRow({ exercise, onTap }: Props) {
     await db.exercises.update(exercise.id!, { setsCompleted: newCompleted });
   }
 
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <div className="exercise-row" onClick={() => onTap(exercise)}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`exercise-row ${isDragging ? 'dragging' : ''}`}
+      onClick={() => onTap(exercise)}
+    >
+      {isDraggable && (
+        <span className="drag-handle" {...attributes} {...listeners}>
+          ⋮⋮
+        </span>
+      )}
       <span className="exercise-row-name">
         {exercise.name || 'Untitled'}
         {(photoCount ?? 0) > 0 && <span className="photo-indicator"> 📷</span>}

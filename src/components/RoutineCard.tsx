@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
-import { ExerciseRow } from './ExerciseRow';
+import { DraggableExerciseList } from './DraggableExerciseList';
 import { ExerciseForm } from './ExerciseForm';
 import type { Routine, Exercise } from '../types';
 
@@ -88,6 +88,27 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
     setCopyDate('');
   }
 
+  async function handleReorder(activeId: number, overId: number) {
+    if (!exercises) return;
+
+    const oldIndex = exercises.findIndex(ex => ex.id === activeId);
+    const newIndex = exercises.findIndex(ex => ex.id === overId);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Create reordered array
+    const reordered = [...exercises];
+    const [moved] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, moved);
+
+    // Update order field for all exercises in a transaction
+    await db.transaction('rw', db.exercises, async () => {
+      for (let i = 0; i < reordered.length; i++) {
+        await db.exercises.update(reordered[i].id!, { order: i + 1 });
+      }
+    });
+  }
+
   return (
     <div className="routine-card">
       <div className="routine-header" onClick={onToggle}>
@@ -133,9 +154,13 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
       </div>
       {expanded && (
         <div className="routine-body">
-          {exercises?.map((ex) => (
-            <ExerciseRow key={ex.id} exercise={ex} onTap={setEditing} />
-          ))}
+          {exercises && exercises.length > 0 && (
+            <DraggableExerciseList
+              exercises={exercises}
+              onTap={setEditing}
+              onReorder={handleReorder}
+            />
+          )}
           <button className="btn btn-small" onClick={addExercise}>
             + Exercise
           </button>
@@ -155,14 +180,16 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
               <h3>Copy Routine</h3>
               <button className="btn-icon" onClick={() => setShowCopyDialog(false)}>&times;</button>
             </div>
-            <div className="form-group">
-              <label>Select Date</label>
-              <input
-                type="date"
-                value={copyDate}
-                onChange={(e) => setCopyDate(e.target.value)}
-                autoFocus
-              />
+            <div className="modal-scrollable">
+              <div className="form-group">
+                <label>Select Date</label>
+                <input
+                  type="date"
+                  value={copyDate}
+                  onChange={(e) => setCopyDate(e.target.value)}
+                  autoFocus
+                />
+              </div>
             </div>
             <div className="modal-actions">
               <button
