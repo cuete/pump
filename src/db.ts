@@ -1,10 +1,11 @@
 import Dexie, { type Table } from 'dexie';
-import type { Routine, Exercise, ExercisePhoto } from './types';
+import type { Routine, Exercise, ExercisePhoto, SavedExercise } from './types';
 
 class PumpDB extends Dexie {
   routines!: Table<Routine, number>;
   exercises!: Table<Exercise, number>;
   exercisePhotos!: Table<ExercisePhoto, number>;
+  savedExercises!: Table<SavedExercise, number>;
 
   constructor() {
     super('PumpDB');
@@ -39,6 +40,12 @@ class PumpDB extends Dexie {
       return tx.table('exercises').toCollection().modify(ex => {
         if (ex.distance === undefined) ex.distance = 0;
       });
+    });
+    this.version(5).stores({
+      routines: '++id, date',
+      exercises: '++id, routineId',
+      exercisePhotos: '++id, exerciseId',
+      savedExercises: '++id, &name, lastUsed',
     });
   }
 }

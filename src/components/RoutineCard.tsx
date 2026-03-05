@@ -4,7 +4,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { DraggableExerciseList } from './DraggableExerciseList';
 import { ExerciseForm } from './ExerciseForm';
-import type { Routine, Exercise } from '../types';
+import { ExercisePicker } from './ExercisePicker';
+import type { Routine, Exercise, SavedExercise } from '../types';
 
 interface Props {
   routine: Routine;
@@ -18,23 +19,24 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
   const [renaming, setRenaming] = useState(false);
   const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [copyDate, setCopyDate] = useState('');
+  const [showPicker, setShowPicker] = useState(false);
 
   const exercises = useLiveQuery(
     () => db.exercises.where('routineId').equals(routine.id!).sortBy('order'),
     [routine.id],
   );
 
-  async function addExercise() {
+  async function addExercise(saved: SavedExercise | null, filterText?: string) {
     const order = (exercises?.length ?? 0) + 1;
     const id = await db.exercises.add({
       routineId: routine.id!,
-      name: '',
-      repetitions: 0,
-      weight: 0,
-      sets: 0,
+      name: saved?.name ?? filterText ?? '',
+      repetitions: saved?.repetitions ?? 0,
+      weight: saved?.weight ?? 0,
+      sets: saved?.sets ?? 0,
       setsCompleted: 0,
-      time: '00:00',
-      distance: 0,
+      time: saved?.time ?? '00:00',
+      distance: saved?.distance ?? 0,
       order,
     });
     const created = await db.exercises.get(id);
@@ -161,7 +163,7 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
               onReorder={handleReorder}
             />
           )}
-          <button className="btn btn-small" onClick={addExercise}>
+          <button className="btn btn-small" onClick={() => setShowPicker(true)}>
             + Exercise
           </button>
         </div>
@@ -171,6 +173,15 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
           exercise={editing}
           onClose={() => setEditing(null)}
           onDelete={deleteExercise}
+        />
+      )}
+      {showPicker && (
+        <ExercisePicker
+          onSelect={(saved) => {
+            setShowPicker(false);
+            addExercise(saved);
+          }}
+          onClose={() => setShowPicker(false)}
         />
       )}
       {showCopyDialog && createPortal(
