@@ -177,9 +177,9 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
       )}
       {showPicker && (
         <ExercisePicker
-          onSelect={(saved) => {
+          onSelect={(saved, filterText) => {
             setShowPicker(false);
-            addExercise(saved);
+            addExercise(saved, filterText);
           }}
           onClose={() => setShowPicker(false)}
         />

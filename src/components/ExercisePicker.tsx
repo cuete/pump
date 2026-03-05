@@ -5,7 +5,7 @@ import { db } from '../db';
 import type { SavedExercise } from '../types';
 
 interface Props {
-  onSelect: (saved: SavedExercise | null) => void;
+  onSelect: (saved: SavedExercise | null, filterText: string) => void;
   onClose: () => void;
 }
 
@@ -43,7 +43,7 @@ export function ExercisePicker({ onSelect, onClose }: Props) {
           <div className="exercise-picker-list">
             <button
               className="exercise-picker-item new"
-              onClick={() => onSelect(null)}
+              onClick={() => onSelect(null, filter)}
             >
               + New exercise{filter ? `: ${filter}` : ''}
             </button>
@@ -52,7 +52,7 @@ export function ExercisePicker({ onSelect, onClose }: Props) {
               <button
                 key={s.id}
                 className="exercise-picker-item"
-                onClick={() => onSelect(s)}
+                onClick={() => onSelect(s, '')}
               >
                 <span className="exercise-picker-name">{s.name}</span>
                 <span className="exercise-picker-details">
