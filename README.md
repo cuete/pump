@@ -6,10 +6,14 @@ A mobile-first workout tracking SPA built with React + TypeScript. All data is s
 
 - Monthly calendar view with day indicators for logged workouts
 - Multiple routines per day, each with named exercises
-- Exercise fields: name, reps, weight, sets, time (mm:ss)
+- Exercise fields: name, reps, weight, sets, time (mm:ss), distance (miles)
 - Per-set completion tracking (tap to toggle)
 - Photo capture and attachment per exercise (compressed, stored in IndexedDB)
+- Drag-and-drop exercise reordering within routines
+- Saved exercises library with autocomplete picker
 - Inline routine renaming
+- Export/import data as JSON (including photos as base64)
+- Settings menu: export, import, clear all data
 - Microsoft SSO via Azure Static Web Apps built-in auth
 - Auth bypassed automatically in development mode
 
@@ -17,6 +21,7 @@ A mobile-first workout tracking SPA built with React + TypeScript. All data is s
 
 - **React 18** + **TypeScript** + **Vite**
 - **Dexie.js** (IndexedDB wrapper) + dexie-react-hooks
+- **@dnd-kit** (drag-and-drop: core, sortable, utilities)
 - **Plain CSS** (mobile-first, dark green theme)
 - **Azure SWA** built-in authentication (AAD)
 
@@ -50,13 +55,14 @@ Auth config is in `staticwebapp.config.json`. All routes require authentication;
 
 ## Data Model
 
-All data stored in IndexedDB via Dexie.js (database: `PumpDB`):
+All data stored in IndexedDB via Dexie.js (database: `PumpDB`, schema version 5):
 
 | Table | Fields |
 |-------|--------|
 | `routines` | id, date (YYYY-MM-DD), name, order |
-| `exercises` | id, routineId, name, repetitions, weight, sets, setsCompleted, time (mm:ss), order |
+| `exercises` | id, routineId, name, repetitions, weight, sets, setsCompleted, time (mm:ss), distance (miles), order |
 | `exercisePhotos` | id, exerciseId, blob, timestamp |
+| `savedExercises` | id, name (unique), repetitions, weight, sets, time, distance, lastUsed (timestamp) |
 
 ## Project Structure
 
@@ -72,6 +78,7 @@ pump/
     ├── App.tsx
     ├── db.ts
     ├── types.ts
+    ├── vite-env.d.ts
     ├── hooks/
     │   ├── useAuth.ts
     │   └── useAutoSave.ts
@@ -81,7 +88,12 @@ pump/
     │   ├── RoutineCard.tsx
     │   ├── ExerciseRow.tsx
     │   ├── ExerciseForm.tsx
-    │   └── PhotoManager.tsx
+    │   ├── ExercisePicker.tsx
+    │   ├── DraggableExerciseList.tsx
+    │   ├── PhotoManager.tsx
+    │   └── SettingsMenu.tsx
+    ├── utils/
+    │   └── export.ts
     └── styles/
         └── app.css
 ```
