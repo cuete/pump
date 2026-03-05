@@ -20,6 +20,21 @@ export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
 
   async function handleSave() {
     await db.exercises.update(exercise.id!, { name, repetitions, weight, sets, time, distance });
+
+    // Sync to savedExercises library
+    if (name.trim()) {
+      const existing = await db.savedExercises.where('name').equals(name.trim()).first();
+      if (existing) {
+        await db.savedExercises.update(existing.id!, {
+          repetitions, weight, sets, time, distance, lastUsed: Date.now(),
+        });
+      } else {
+        await db.savedExercises.add({
+          name: name.trim(), repetitions, weight, sets, time, distance, lastUsed: Date.now(),
+        });
+      }
+    }
+
     onClose();
   }
 

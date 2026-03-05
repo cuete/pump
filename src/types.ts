@@ -18,6 +18,17 @@ export interface Exercise {
   order: number;
 }
 
+export interface SavedExercise {
+  id?: number;
+  name: string;
+  repetitions: number;
+  weight: number;
+  sets: number;
+  time: string;
+  distance: number;
+  lastUsed: number; // timestamp
+}
+
 export interface ExercisePhoto {
   id?: number;
   exerciseId: number;
