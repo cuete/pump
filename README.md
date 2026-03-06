@@ -137,47 +137,79 @@ func azure functionapp publish <function-app-name>
 
 ## Azure Deployment
 
-### 1. Azure Resources
+This project uses **Azure Static Web Apps** which handles both frontend (UI) and backend (API) deployment automatically via GitHub Actions.
 
-Create:
-- Azure Static Web App (for UI)
-- Azure Function App (Node.js 18, for API)
-- Azure Storage Account (for Table Storage)
+### 1. Create Azure Resources
 
-### 2. Configure Azure Static Web App
+**Required:**
+- **Azure Static Web App** (Standard tier recommended for production)
+- **Azure Storage Account** (for Table Storage)
 
-1. Set build configuration:
-   - App location: `/`
-   - Output location: `dist`
-   - API location: (empty - API is separate)
+**Not needed:** Separate Azure Function App (API is deployed as part of Static Web App)
 
-2. Configure authentication in `staticwebapp.config.json`
+### 2. Configure Azure Storage
 
-3. Set application settings:
-   - `VITE_API_URL`: `https://<function-app-name>.azurewebsites.net/api`
-   - `VITE_API_KEY`: `<your-shared-key>`
+1. Create Storage Account (General-purpose v2)
+2. Create two tables:
+   - `routines`
+   - `exercises`
+3. Copy the **Connection String** from Storage Account → Access keys
 
-### 3. Configure Azure Function App
+### 3. Configure Azure Static Web App
 
-Set application settings:
-- `AZURE_STORAGE_CONNECTION_STRING`: Connection string from Storage Account
-- `API_SHARED_KEY`: Same key as in Static Web App
-- `FUNCTIONS_WORKER_RUNTIME`: `node`
+**Application Settings** (Azure Portal → Static Web App → Configuration):
 
-Enable CORS to allow Static Web App origin.
+| Name | Value | Description |
+|------|-------|-------------|
+| `AZURE_STORAGE_CONNECTION_STRING` | `DefaultEndpointsProtocol=https;AccountName=...` | From Storage Account |
+| `API_SHARED_KEY` | `your-secret-key` | Generate a secure random string |
 
-### 4. Deploy
+**Important:** Do NOT configure `VITE_*` variables in Azure Portal - these are configured in GitHub Actions.
 
-```bash
-# Deploy UI
-# (Automated via GitHub integration or:)
-npm run build
-# Upload dist/ to Azure Static Web App
+### 4. Configure GitHub Repository
 
-# Deploy API
-cd api
-func azure functionapp publish <function-app-name>
-```
+**GitHub Secrets** (Repo → Settings → Secrets and variables → Actions):
+
+| Name | Value | Description |
+|------|-------|-------------|
+| `API_SHARED_KEY` | `your-secret-key` | **Must match** the value in Azure Portal |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_*` | Auto-generated | Created automatically by Azure |
+
+**How to add secret:**
+1. Go to GitHub repo → Settings → Secrets and variables → Actions
+2. Click "New repository secret"
+3. Name: `API_SHARED_KEY`
+4. Value: Same value as configured in Azure Portal
+5. Click "Add secret"
+
+### 5. Deploy
+
+Deployment is **automatic** via GitHub Actions:
+
+1. **Push to `main` branch** → Triggers production deployment
+2. **Open Pull Request** → Creates staging environment (preview)
+3. **Merge PR** → Deploys to production
+
+**GitHub Workflow** (`.github/workflows/azure-static-web-apps-*.yml`) handles:
+- Building frontend (Vite)
+- Building API (Azure Functions v4)
+- Deploying both to Azure Static Web Apps
+
+**No manual deployment needed!**
+
+### 6. Verify Deployment
+
+After deployment completes (~2-3 minutes):
+
+1. **Check deployment status:** GitHub Actions tab → Latest workflow run
+2. **Test frontend:** Open Static Web App URL
+3. **Test API:** Open browser console, check for 200 responses (not 401/404)
+4. **Test auth:** Log in with Microsoft account
+
+**Common issues:**
+- **401 Unauthorized:** GitHub secret `API_SHARED_KEY` not configured or doesn't match Azure Portal
+- **404 Not Found:** API not deployed (check workflow logs)
+- **500 Internal Server Error:** Check `AZURE_STORAGE_CONNECTION_STRING` in Azure Portal
 
 ## Data Model
 
