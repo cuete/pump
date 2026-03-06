@@ -135,6 +135,44 @@ npm run build
 func azure functionapp publish <function-app-name>
 ```
 
+## Testing
+
+### Unit Tests
+
+Run frontend and API unit tests:
+
+```bash
+# Frontend tests
+npm test
+
+# API tests
+cd api
+npm test
+
+# Run tests in watch mode
+npm test -- --watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+### GitHub Actions CI
+
+Tests run automatically on:
+- Every push to `main` or `feature/**` branches
+- Every pull request to `main`
+
+See test results in the **Actions** tab of the GitHub repository.
+
+### Test Coverage
+
+Current test coverage:
+- **Frontend**: API client, custom hooks (useRoutines, useExercises)
+- **API**: Storage operations (routines, exercises, CRUD)
+- **Total**: 18 unit tests, 3 integration tests (skipped in CI)
+
+Integration tests require Azurite (Azure Storage Emulator). See `api/test/README.md` for setup instructions.
+
 ## Azure Deployment
 
 This project uses **Azure Static Web Apps** which handles both frontend (UI) and backend (API) deployment automatically via GitHub Actions.
@@ -311,4 +349,5 @@ The frontend no longer uses IndexedDB - all data is stored in Azure and accessed
 ## License
 
 MIT
+
 
