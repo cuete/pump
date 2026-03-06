@@ -1,52 +1,161 @@
-import Dexie, { type Table } from 'dexie';
-import type { Routine, Exercise, ExercisePhoto, SavedExercise } from './types';
+import type { Routine, Exercise, ExercisePhoto } from './types';
+import { api } from './api';
 
-class PumpDB extends Dexie {
-  routines!: Table<Routine, number>;
-  exercises!: Table<Exercise, number>;
-  exercisePhotos!: Table<ExercisePhoto, number>;
-  savedExercises!: Table<SavedExercise, number>;
+// DB wrapper that uses the API instead of IndexedDB
+class PumpDB {
+  private _userId: string | null = null;
 
-  constructor() {
-    super('PumpDB');
-    this.version(1).stores({
-      routines: '++id, date',
-      exercises: '++id, routineId',
-      exercisePhotos: '++id, exerciseId',
-    });
-    this.version(2).stores({
-      routines: '++id, date',
-      exercises: '++id, routineId',
-      exercisePhotos: '++id, exerciseId',
-    }).upgrade(tx => {
-      return tx.table('exercises').toCollection().modify(ex => {
-        if (ex.time === undefined) ex.time = '00:00';
-      });
-    });
-    this.version(3).stores({
-      routines: '++id, date',
-      exercises: '++id, routineId',
-      exercisePhotos: '++id, exerciseId',
-    }).upgrade(tx => {
-      return tx.table('exercises').toCollection().modify(ex => {
-        if (ex.setsCompleted === undefined) ex.setsCompleted = 0;
-      });
-    });
-    this.version(4).stores({
-      routines: '++id, date',
-      exercises: '++id, routineId',
-      exercisePhotos: '++id, exerciseId',
-    }).upgrade(tx => {
-      return tx.table('exercises').toCollection().modify(ex => {
-        if (ex.distance === undefined) ex.distance = 0;
-      });
-    });
-    this.version(5).stores({
-      routines: '++id, date',
-      exercises: '++id, routineId',
-      exercisePhotos: '++id, exerciseId',
-      savedExercises: '++id, &name, lastUsed',
-    });
+  setUserId(userId: string) {
+    this._userId = userId;
+    api.setUserId(userId);
+  }
+
+  get userId(): string {
+    if (!this._userId) {
+      throw new Error('User ID not set');
+    }
+    return this._userId;
+  }
+
+  get routines() {
+    return {
+      toArray: async (): Promise<Routine[]> => {
+        return await api.getRoutines();
+      },
+      
+      where: (field: string) => ({
+        between: (start: string, end: string) => ({
+          toArray: async (): Promise<Routine[]> => {
+            if (field !== 'date') {
+              throw new Error('Only date filtering is supported');
+            }
+            return await api.getRoutines(start, end);
+          }
+        }),
+        equals: (value: any) => ({
+          toArray: async (): Promise<Routine[]> => {
+            const allRoutines = await api.getRoutines();
+            return allRoutines.filter((r: any) => r[field] === value);
+          },
+          sortBy: async (sortField: string): Promise<Routine[]> => {
+            const filtered = await api.getRoutines();
+            return filtered
+              .filter((r: any) => r[field] === value)
+              .sort((a: any, b: any) => {
+                if (a[sortField] < b[sortField]) return -1;
+                if (a[sortField] > b[sortField]) return 1;
+                return 0;
+              });
+          }
+        })
+      }),
+
+      add: async (routine: Omit<Routine, 'id'>): Promise<number> => {
+        const created = await api.createRoutine(routine);
+        return created.id!;
+      },
+
+      get: async (id: number): Promise<Routine | undefined> => {
+        const routine = await api.getRoutine(id);
+        return routine || undefined;
+      },
+
+      update: async (id: number, updates: Partial<Routine>): Promise<void> => {
+        await api.updateRoutine(id, updates);
+      },
+
+      delete: async (id: number): Promise<void> => {
+        await api.deleteRoutine(id);
+      }
+    };
+  }
+
+  get exercises() {
+    return {
+      toArray: async (): Promise<Exercise[]> => {
+        return await api.getExercises();
+      },
+
+      where: (field: string) => ({
+        equals: (value: any) => ({
+          toArray: async (): Promise<Exercise[]> => {
+            if (field === 'routineId') {
+              return await api.getExercises(value);
+            }
+            const allExercises = await api.getExercises();
+            return allExercises.filter((e: any) => e[field] === value);
+          },
+          sortBy: async (sortField: string): Promise<Exercise[]> => {
+            const exercises = field === 'routineId' 
+              ? await api.getExercises(value)
+              : await api.getExercises();
+            return exercises
+              .filter((e: any) => e[field] === value)
+              .sort((a: any, b: any) => {
+                if (a[sortField] < b[sortField]) return -1;
+                if (a[sortField] > b[sortField]) return 1;
+                return 0;
+              });
+          }
+        })
+      }),
+
+      add: async (exercise: Omit<Exercise, 'id'>): Promise<number> => {
+        const created = await api.createExercise(exercise);
+        return created.id!;
+      },
+
+      get: async (id: number): Promise<Exercise | undefined> => {
+        const exercises = await api.getExercises();
+        return exercises.find(e => e.id === id);
+      },
+
+      update: async (id: number, updates: Partial<Exercise>): Promise<void> => {
+        await api.updateExercise(id, updates);
+      },
+
+      delete: async (id: number): Promise<void> => {
+        await api.deleteExercise(id);
+      },
+
+      bulkDelete: async (ids: number[]): Promise<void> => {
+        await Promise.all(ids.map(id => api.deleteExercise(id)));
+      }
+    };
+  }
+
+  get exercisePhotos() {
+    return {
+      toArray: async (): Promise<ExercisePhoto[]> => {
+        // This would require fetching all exercises first, which is inefficient
+        // In practice, photos are always fetched per exercise
+        throw new Error('Use where().equals() to fetch photos by exerciseId');
+      },
+
+      where: (field: string) => ({
+        equals: (value: any) => ({
+          toArray: async (): Promise<ExercisePhoto[]> => {
+            if (field !== 'exerciseId') {
+              throw new Error('Only exerciseId filtering is supported');
+            }
+            return await api.getExercisePhotos(value);
+          }
+        })
+      }),
+
+      add: async (photo: Omit<ExercisePhoto, 'id'>): Promise<number> => {
+        const created = await api.createExercisePhoto(photo);
+        return created.id!;
+      },
+
+      delete: async (id: number): Promise<void> => {
+        await api.deleteExercisePhoto(id);
+      },
+
+      bulkDelete: async (ids: number[]): Promise<void> => {
+        await Promise.all(ids.map(id => api.deleteExercisePhoto(id)));
+      }
+    };
   }
 }
 
