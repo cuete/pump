@@ -2,6 +2,7 @@
   "name": "pump-api",
   "version": "1.0.0",
   "description": "Pump API with Azure Table Storage",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "start": "func start",
