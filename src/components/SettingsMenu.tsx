@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { exportDatabase, importDatabase, downloadJSON, clearAllData } from '../utils/export';
 import type { ExportData } from '../types';
+import packageJson from '../../package.json';
 
 interface Props {
   onClose: () => void;
@@ -143,9 +144,11 @@ export function SettingsMenu({ onClose }: Props) {
           </div>
 
           <div className="settings-section">
+            <h4>About</h4>
             <p className="settings-about">
               <strong>Pump</strong> - Workout Tracker<br />
-              All data stored locally in your browser
+              Version {packageJson.version}<br />
+              Data stored in Azure Table Storage
             </p>
           </div>
         </div>
