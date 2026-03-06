@@ -9,7 +9,7 @@ import type { Routine, Exercise } from '../types';
 
 interface Props {
   routine: Routine;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
   expanded: boolean;
   onToggle: () => void;
 }
@@ -41,7 +41,7 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
     if (created) setEditing(created);
   }
 
-  async function deleteExercise(id: number) {
+  async function deleteExercise(id: string) {
     await db.exercises.delete(id);
     await refresh(); // Refresh after delete
   }
@@ -71,7 +71,7 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
     if (exercises) {
       for (const ex of exercises) {
         await db.exercises.add({
-          routineId: newRoutineId as number,
+          routineId: newRoutineId,
           name: ex.name,
           repetitions: ex.repetitions,
           weight: ex.weight,
@@ -88,7 +88,7 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
     setCopyDate('');
   }
 
-  async function handleReorder(activeId: number, overId: number) {
+  async function handleReorder(activeId: string, overId: string) {
     if (!exercises) return;
 
     const oldIndex = exercises.findIndex(ex => ex.id === activeId);

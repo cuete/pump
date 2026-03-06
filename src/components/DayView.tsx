@@ -19,7 +19,7 @@ function formatDate(dateStr: string): string {
 }
 
 export function DayView({ date, onBack }: Props) {
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const { routines, refresh } = useRoutines(date);
 
   // Auto-expand newest (last in order, first after reverse) on initial load
@@ -31,10 +31,10 @@ export function DayView({ date, onBack }: Props) {
     const order = (routines?.length ?? 0) + 1;
     const id = await db.routines.add({ date, name: `Routine ${order}`, order });
     await refresh(); // Refresh to show new routine
-    setExpandedId(id as number);
+    setExpandedId(id);
   }
 
-  async function deleteRoutine(id: number) {
+  async function deleteRoutine(id: string) {
     const exercises = await db.exercises.where('routineId').equals(id).toArray();
     for (const ex of exercises) {
       await db.exercises.delete(ex.id!);
@@ -44,7 +44,7 @@ export function DayView({ date, onBack }: Props) {
     await refresh(); // Refresh after delete
   }
 
-  function handleToggle(id: number) {
+  function handleToggle(id: string) {
     setExpandedId(activeId === id ? null : id);
   }
 

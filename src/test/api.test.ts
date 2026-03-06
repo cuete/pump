@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, beforeAll } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Routine, Exercise } from '../types';
 
 // Mock fetch
@@ -39,7 +39,7 @@ describe('ApiClient', () => {
         })
       );
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(1); // Should be converted to number
+      expect(result[0].id).toBe('1'); // Should remain as string
     });
 
     it('should create routine with POST', async () => {
@@ -60,7 +60,7 @@ describe('ApiClient', () => {
           body: JSON.stringify({ ...newRoutine, userId: 'test-user' }),
         })
       );
-      expect(result.id).toBe(123); // Should be converted to number
+      expect(result.id).toBe('123'); // Should remain as string
     });
 
     it('should delete routine with DELETE', async () => {
@@ -69,7 +69,7 @@ describe('ApiClient', () => {
         json: async () => ({}),
       });
 
-      await api.deleteRoutine(123);
+      await api.deleteRoutine('123');
 
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/routines/123?userId=test-user',
@@ -112,18 +112,18 @@ describe('ApiClient', () => {
         json: async () => mockExercises,
       });
 
-      const result = await api.getExercises(10);
+      const result = await api.getExercises('10');
 
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/exercises?userId=test-user&routineId=10',
         expect.anything()
       );
-      expect(result[0].routineId).toBe(10); // Should be converted to number
+      expect(result[0].routineId).toBe('10'); // Should remain as string
     });
 
     it('should create exercise with POST', async () => {
       const newExercise = {
-        routineId: 10,
+        routineId: '10',
         name: 'Test',
         repetitions: 10,
         weight: 50,
@@ -150,8 +150,8 @@ describe('ApiClient', () => {
           body: expect.stringContaining('"routineId":"10"'), // Should be stringified
         })
       );
-      expect(result.id).toBe(456); // Should be converted to number
-      expect(result.routineId).toBe(10); // Should be converted to number
+      expect(result.id).toBe('456'); // Should remain as string
+      expect(result.routineId).toBe('10'); // Should remain as string
     });
   });
 });

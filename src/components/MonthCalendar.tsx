@@ -150,7 +150,7 @@ function formatPreviewDate(dateStr: string): string {
 }
 
 interface PreviewRoutineProps {
-  routineId: number;
+  routineId: string;
   routineName: string;
 }
 

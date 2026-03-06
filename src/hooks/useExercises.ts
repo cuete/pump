@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { db } from '../db';
 import type { Exercise } from '../types';
 
-export function useExercises(routineId: number | undefined) {
+export function useExercises(routineId: string | undefined) {
   const [exercises, setExercises] = useState<Exercise[] | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 

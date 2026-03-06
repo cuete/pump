@@ -111,6 +111,19 @@ async function routineHandler(request: HttpRequest, context: InvocationContext):
     // PATCH - Update routine
     if (method === 'PATCH') {
       const updates = await request.json() as Partial<storage.Routine>;
+      
+      context.log(`PATCH routine - userId: ${userId}, routineId: ${routineId}`);
+      
+      // Verify routine exists first
+      const existing = await storage.getRoutine(userId, routineId);
+      if (!existing) {
+        context.warn(`Routine not found - userId: ${userId}, routineId: ${routineId}`);
+        return {
+          status: 404,
+          jsonBody: { error: 'Routine not found' }
+        };
+      }
+      
       await storage.updateRoutine(userId, routineId, updates);
       
       return {
@@ -121,6 +134,18 @@ async function routineHandler(request: HttpRequest, context: InvocationContext):
 
     // DELETE - Delete routine
     if (method === 'DELETE') {
+      context.log(`DELETE routine - userId: ${userId}, routineId: ${routineId}`);
+      
+      // Verify routine exists first
+      const existing = await storage.getRoutine(userId, routineId);
+      if (!existing) {
+        context.warn(`Routine not found - userId: ${userId}, routineId: ${routineId}`);
+        return {
+          status: 404,
+          jsonBody: { error: 'Routine not found' }
+        };
+      }
+      
       await storage.deleteRoutine(userId, routineId);
       
       return {

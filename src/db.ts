@@ -50,21 +50,21 @@ class PumpDB {
         })
       }),
 
-      add: async (routine: Omit<Routine, 'id'>): Promise<number> => {
+      add: async (routine: Omit<Routine, 'id'>): Promise<string> => {
         const created = await api.createRoutine(routine);
         return created.id!;
       },
 
-      get: async (id: number): Promise<Routine | undefined> => {
+      get: async (id: string): Promise<Routine | undefined> => {
         const routine = await api.getRoutine(id);
         return routine || undefined;
       },
 
-      update: async (id: number, updates: Partial<Routine>): Promise<void> => {
+      update: async (id: string, updates: Partial<Routine>): Promise<void> => {
         await api.updateRoutine(id, updates);
       },
 
-      delete: async (id: number): Promise<void> => {
+      delete: async (id: string): Promise<void> => {
         await api.deleteRoutine(id);
       }
     };
@@ -80,7 +80,7 @@ class PumpDB {
         equals: (value: any) => ({
           toArray: async (): Promise<Exercise[]> => {
             if (field === 'routineId') {
-              return await api.getExercises(value);
+              return await api.getExercises(String(value));
             }
             const allExercises = await api.getExercises();
             return allExercises.filter((e: any) => e[field] === value);
@@ -100,25 +100,25 @@ class PumpDB {
         })
       }),
 
-      add: async (exercise: Omit<Exercise, 'id'>): Promise<number> => {
+      add: async (exercise: Omit<Exercise, 'id'>): Promise<string> => {
         const created = await api.createExercise(exercise);
         return created.id!;
       },
 
-      get: async (id: number): Promise<Exercise | undefined> => {
+      get: async (id: string): Promise<Exercise | undefined> => {
         const exercises = await api.getExercises();
         return exercises.find(e => e.id === id);
       },
 
-      update: async (id: number, updates: Partial<Exercise>): Promise<void> => {
+      update: async (id: string, updates: Partial<Exercise>): Promise<void> => {
         await api.updateExercise(id, updates);
       },
 
-      delete: async (id: number): Promise<void> => {
+      delete: async (id: string): Promise<void> => {
         await api.deleteExercise(id);
       },
 
-      bulkDelete: async (ids: number[]): Promise<void> => {
+      bulkDelete: async (ids: string[]): Promise<void> => {
         await Promise.all(ids.map(id => api.deleteExercise(id)));
       }
     };

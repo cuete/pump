@@ -6,7 +6,7 @@ import type { Exercise } from '../types';
 interface Props {
   exercise: Exercise;
   onClose: () => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
   onSave?: () => void | Promise<void>;
 }
 

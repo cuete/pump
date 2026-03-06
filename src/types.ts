@@ -1,13 +1,13 @@
 export interface Routine {
-  id?: number;
+  id?: string;
   date: string; // YYYY-MM-DD
   name: string;
   order: number;
 }
 
 export interface Exercise {
-  id?: number;
-  routineId: number;
+  id?: string;
+  routineId: string;
   name: string;
   repetitions: number;
   weight: number;

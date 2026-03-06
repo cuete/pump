@@ -18,7 +18,7 @@ import type { Exercise } from '../types';
 interface Props {
   exercises: Exercise[];
   onTap: (exercise: Exercise) => void;
-  onReorder: (activeId: number, overId: number) => void;
+  onReorder: (activeId: string, overId: string) => void;
 }
 
 export function DraggableExerciseList({ exercises, onTap, onReorder }: Props) {
@@ -41,7 +41,7 @@ export function DraggableExerciseList({ exercises, onTap, onReorder }: Props) {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      onReorder(Number(active.id), Number(over.id));
+      onReorder(String(active.id), String(over.id));
     }
   }
 

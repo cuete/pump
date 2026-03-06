@@ -63,14 +63,14 @@ class ApiClient {
     if (endDate) params.set('endDate', endDate);
     
     const routines = await this.request<ApiRoutine[]>(`/routines?${params}`);
-    return routines.map(r => ({ ...r, id: parseInt(r.id!) }));
+    return routines.map(r => ({ ...r, id: r.id! }));
   }
 
-  async getRoutine(id: number): Promise<Routine | null> {
+  async getRoutine(id: string): Promise<Routine | null> {
     try {
       const params = new URLSearchParams({ userId: this.userId });
       const routine = await this.request<ApiRoutine>(`/routines/${id}?${params}`);
-      return { ...routine, id: parseInt(routine.id!) };
+      return { ...routine, id: routine.id! };
     } catch (error) {
       return null;
     }
@@ -82,10 +82,10 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ ...routine, userId: this.userId }),
     });
-    return { ...created, id: parseInt(created.id!) };
+    return { ...created, id: created.id! };
   }
 
-  async updateRoutine(id: number, updates: Partial<Routine>): Promise<void> {
+  async updateRoutine(id: string, updates: Partial<Routine>): Promise<void> {
     const params = new URLSearchParams({ userId: this.userId });
     await this.request(`/routines/${id}?${params}`, {
       method: 'PATCH',
@@ -93,7 +93,7 @@ class ApiClient {
     });
   }
 
-  async deleteRoutine(id: number): Promise<void> {
+  async deleteRoutine(id: string): Promise<void> {
     const params = new URLSearchParams({ userId: this.userId });
     await this.request(`/routines/${id}?${params}`, {
       method: 'DELETE',
@@ -101,15 +101,15 @@ class ApiClient {
   }
 
   // Exercises
-  async getExercises(routineId?: number): Promise<Exercise[]> {
+  async getExercises(routineId?: string): Promise<Exercise[]> {
     const params = new URLSearchParams({ userId: this.userId });
-    if (routineId !== undefined) params.set('routineId', String(routineId));
+    if (routineId !== undefined) params.set('routineId', routineId);
     
     const exercises = await this.request<ApiExercise[]>(`/exercises?${params}`);
     return exercises.map(e => ({ 
       ...e, 
-      id: parseInt(e.id!),
-      routineId: parseInt(e.routineId)
+      id: e.id!,
+      routineId: e.routineId
     }));
   }
 
@@ -119,30 +119,26 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ 
         ...exercise, 
-        routineId: String(exercise.routineId),
+        routineId: exercise.routineId,
         userId: this.userId 
       }),
     });
     return { 
       ...created, 
-      id: parseInt(created.id!),
-      routineId: parseInt(created.routineId)
+      id: created.id!,
+      routineId: created.routineId
     };
   }
 
-  async updateExercise(id: number, updates: Partial<Exercise>): Promise<void> {
+  async updateExercise(id: string, updates: Partial<Exercise>): Promise<void> {
     const params = new URLSearchParams({ userId: this.userId });
-    const body = { ...updates };
-    if (body.routineId !== undefined) {
-      (body as any).routineId = String(body.routineId);
-    }
     await this.request(`/exercises/${id}?${params}`, {
       method: 'PATCH',
-      body: JSON.stringify(body),
+      body: JSON.stringify(updates),
     });
   }
 
-  async deleteExercise(id: number): Promise<void> {
+  async deleteExercise(id: string): Promise<void> {
     const params = new URLSearchParams({ userId: this.userId });
     await this.request(`/exercises/${id}?${params}`, {
       method: 'DELETE',

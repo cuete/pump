@@ -103,7 +103,7 @@ export async function importDatabase(data: ExportData): Promise<void> {
     // Insert exercises
     for (const exerciseData of routineData.exercises) {
       await db.exercises.add({
-        routineId: routineId as number,
+        routineId: routineId,
         name: exerciseData.name,
         repetitions: exerciseData.repetitions,
         weight: exerciseData.weight,

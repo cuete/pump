@@ -99,7 +99,7 @@ describe('useExercises', () => {
       }),
     } as any);
 
-    const { result } = renderHook(() => useExercises(10));
+    const { result } = renderHook(() => useExercises('10'));
 
     expect(result.current.loading).toBe(true);
 
