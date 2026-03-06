@@ -9,16 +9,10 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'jsdom',
+    environment: 'happy-dom',
     setupFiles: './src/test/setup.ts',
     include: ['src/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/api/**', '**/.{git,cache}/**'],
-    pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
