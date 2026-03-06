@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { db } from '../db';
-import { PhotoManager } from './PhotoManager';
 import type { Exercise } from '../types';
 
 interface Props {
@@ -106,8 +105,6 @@ export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
               />
             </div>
           </div>
-
-          <PhotoManager exerciseId={exercise.id!} />
         </div>
 
         <div className="modal-actions">

@@ -43,15 +43,9 @@ After:
    - Table Storage uses string-based RowKeys
    - API converts between them for frontend compatibility
 
-4. **Photos:**
-   - Previously stored as Blob in IndexedDB
-   - Now stored as base64 strings in Table Storage
-
 ## Breaking Changes
 
 - `db.ts` API is mostly compatible, but uses HTTP under the hood
-- Photo retrieval is now async (always was, no functional change)
-- Table Storage limits: 1MB per entity (photos should be compressed)
 
 ## Migration Steps
 
@@ -93,8 +87,7 @@ After:
    ```bash
    az storage table create --name routines --connection-string "UseDevelopmentStorage=true"
    az storage table create --name exercises --connection-string "UseDevelopmentStorage=true"
-   az storage table create --name exercisePhotos --connection-string "UseDevelopmentStorage=true"
-   ```
+      ```
 
 5. **Run API and UI:**
    ```bash
@@ -122,22 +115,7 @@ async function exportData() {
   
   const routines = await db.routines.toArray();
   const exercises = await db.exercises.toArray();
-  const photos = await db.exercisePhotos.toArray();
-  
-  // Convert photos to base64
-  const photosWithBase64 = await Promise.all(
-    photos.map(async (p) => ({
-      ...p,
-      base64: await blobToBase64(p.blob),
-      mimeType: p.blob.type
-    }))
-  );
-  
-  const exportData = {
-    routines,
-    exercises,
-    photos: photosWithBase64
-  };
+  const exportData = {\n    routines,\n    exercises\n  };
   
   // Download as JSON
   const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -212,22 +190,6 @@ async function importData(filePath) {
     exerciseIdMap.set(exercise.id, created.id);
   }
   
-  // Import photos
-  for (const photo of data.photos) {
-    const newExerciseId = exerciseIdMap.get(photo.exerciseId);
-    await fetch(`${API_URL}/photos?userId=${USER_ID}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        exerciseId: newExerciseId,
-        base64Data: photo.base64,
-        mimeType: photo.mimeType,
-        timestamp: photo.timestamp,
-        userId: USER_ID
-      })
-    });
-  }
-  
   console.log('Import complete!');
 }
 
@@ -261,3 +223,4 @@ If you encounter issues during migration:
 2. Check Function App logs in Azure Portal
 3. Verify API_KEY matches between frontend and backend
 4. Ensure tables exist in Storage Account
+

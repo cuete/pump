@@ -1,16 +1,7 @@
-import type { Routine, Exercise, ExercisePhoto } from './types';
+import type { Routine, Exercise } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
-
-interface ApiExercisePhoto {
-  id?: string;
-  exerciseId: string;
-  userId: string;
-  base64Data: string;
-  mimeType: string;
-  timestamp: number;
-}
 
 interface ApiRoutine {
   id?: string;
@@ -155,75 +146,6 @@ class ApiClient {
     const params = new URLSearchParams({ userId: this.userId });
     await this.request(`/exercises/${id}?${params}`, {
       method: 'DELETE',
-    });
-  }
-
-  // Exercise Photos
-  async getExercisePhotos(exerciseId: number): Promise<ExercisePhoto[]> {
-    const params = new URLSearchParams({ 
-      userId: this.userId,
-      exerciseId: String(exerciseId)
-    });
-    
-    const photos = await this.request<ApiExercisePhoto[]>(`/photos?${params}`);
-    return await Promise.all(
-      photos.map(async p => {
-        // Convert base64 back to Blob
-        const res = await fetch(`data:${p.mimeType};base64,${p.base64Data}`);
-        const blob = await res.blob();
-        return {
-          id: parseInt(p.id!),
-          exerciseId: parseInt(p.exerciseId),
-          blob,
-          timestamp: p.timestamp
-        };
-      })
-    );
-  }
-
-  async createExercisePhoto(photo: Omit<ExercisePhoto, 'id'>): Promise<ExercisePhoto> {
-    // Convert Blob to base64
-    const base64Data = await this.blobToBase64(photo.blob);
-    const mimeType = photo.blob.type;
-    
-    const params = new URLSearchParams({ userId: this.userId });
-    const created = await this.request<ApiExercisePhoto>(`/photos?${params}`, {
-      method: 'POST',
-      body: JSON.stringify({
-        exerciseId: String(photo.exerciseId),
-        userId: this.userId,
-        base64Data,
-        mimeType,
-        timestamp: photo.timestamp
-      }),
-    });
-    
-    return {
-      id: parseInt(created.id!),
-      exerciseId: parseInt(created.exerciseId),
-      blob: photo.blob,
-      timestamp: created.timestamp
-    };
-  }
-
-  async deleteExercisePhoto(id: number): Promise<void> {
-    const params = new URLSearchParams({ userId: this.userId });
-    await this.request(`/photos/${id}?${params}`, {
-      method: 'DELETE',
-    });
-  }
-
-  private async blobToBase64(blob: Blob): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        // Remove data URL prefix (e.g., "data:image/png;base64,")
-        const base64Data = base64.split(',')[1];
-        resolve(base64Data);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
     });
   }
 }

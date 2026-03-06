@@ -38,7 +38,6 @@ For local development with Azurite:
 # Using Azure CLI
 az storage table create --name routines --connection-string "<connection-string>"
 az storage table create --name exercises --connection-string "<connection-string>"
-az storage table create --name exercisePhotos --connection-string "<connection-string>"
 ```
 
 ## Development
@@ -77,12 +76,6 @@ curl -H "x-api-key: your-shared-key" \
 - `PATCH /api/exercises/{exerciseId}?userId={userId}` - Update exercise
 - `DELETE /api/exercises/{exerciseId}?userId={userId}` - Delete exercise
 
-### Photos
-
-- `GET /api/photos?userId={userId}&exerciseId={exerciseId}` - List photos
-- `POST /api/photos?userId={userId}` - Create photo
-- `DELETE /api/photos/{photoId}?userId={userId}` - Delete photo
-
 ## Data Model
 
 ### Routine
@@ -110,18 +103,6 @@ curl -H "x-api-key: your-shared-key" \
   time: string; // mm:ss
   distance: number; // miles
   order: number;
-}
-```
-
-### ExercisePhoto
-```typescript
-{
-  id?: string;
-  exerciseId: string;
-  userId: string;
-  base64Data: string;
-  mimeType: string;
-  timestamp: number;
 }
 ```
 
@@ -153,7 +134,4 @@ Azure Table Storage schema:
 - RowKey: exerciseId (auto-generated)
 - Fields: routineId, name, repetitions, weight, sets, setsCompleted, time, distance, order
 
-**exercisePhotos table**
-- PartitionKey: userId
-- RowKey: photoId (auto-generated)
-- Fields: exerciseId, base64Data, mimeType, timestamp
+

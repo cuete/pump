@@ -29,20 +29,7 @@ export interface SavedExercise {
   lastUsed: number; // timestamp
 }
 
-export interface ExercisePhoto {
-  id?: number;
-  exerciseId: number;
-  blob: Blob;
-  timestamp: number;
-}
-
 // Export data types
-export interface ExportPhoto {
-  timestamp: number;
-  base64: string;
-  mimeType: string;
-}
-
 export interface ExportExercise {
   name: string;
   repetitions: number;
@@ -52,7 +39,6 @@ export interface ExportExercise {
   time: string;
   distance: number;
   order: number;
-  photos: ExportPhoto[];
 }
 
 export interface ExportRoutine {

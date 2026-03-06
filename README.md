@@ -207,6 +207,11 @@ All data stored in Azure Table Storage:
 | distance | number | Distance in miles |
 | order | number | Display order |
 
+<<<<<<< HEAD
+=======
+| timestamp | number | Unix timestamp |
+
+>>>>>>> 9193a99 (refactor: Remove photo feature completely)
 ## Project Structure
 
 ```
@@ -234,8 +239,12 @@ pump/
 │   │   ├── RoutineCard.tsx
 │   │   ├── ExerciseRow.tsx
 │   │   ├── ExerciseForm.tsx
+<<<<<<< HEAD
 │   │   ├── ExercisePicker.tsx
 │   │   ├── DraggableExerciseList.tsx
+=======
+│   │   ├── │   │   ├── DraggableExerciseList.tsx
+>>>>>>> 9193a99 (refactor: Remove photo feature completely)
 │   │   └── SettingsMenu.tsx
 │   ├── styles/
 │   │   └── app.css
@@ -270,3 +279,4 @@ The frontend no longer uses IndexedDB - all data is stored in Azure and accessed
 ## License
 
 MIT
+

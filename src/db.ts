@@ -1,4 +1,4 @@
-import type { Routine, Exercise, ExercisePhoto } from './types';
+import type { Routine, Exercise } from './types';
 import { api } from './api';
 
 // DB wrapper that uses the API instead of IndexedDB
@@ -120,40 +120,6 @@ class PumpDB {
 
       bulkDelete: async (ids: number[]): Promise<void> => {
         await Promise.all(ids.map(id => api.deleteExercise(id)));
-      }
-    };
-  }
-
-  get exercisePhotos() {
-    return {
-      toArray: async (): Promise<ExercisePhoto[]> => {
-        // This would require fetching all exercises first, which is inefficient
-        // In practice, photos are always fetched per exercise
-        throw new Error('Use where().equals() to fetch photos by exerciseId');
-      },
-
-      where: (field: string) => ({
-        equals: (value: any) => ({
-          toArray: async (): Promise<ExercisePhoto[]> => {
-            if (field !== 'exerciseId') {
-              throw new Error('Only exerciseId filtering is supported');
-            }
-            return await api.getExercisePhotos(value);
-          }
-        })
-      }),
-
-      add: async (photo: Omit<ExercisePhoto, 'id'>): Promise<number> => {
-        const created = await api.createExercisePhoto(photo);
-        return created.id!;
-      },
-
-      delete: async (id: number): Promise<void> => {
-        await api.deleteExercisePhoto(id);
-      },
-
-      bulkDelete: async (ids: number[]): Promise<void> => {
-        await Promise.all(ids.map(id => api.deleteExercisePhoto(id)));
       }
     };
   }

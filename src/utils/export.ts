@@ -1,39 +1,7 @@
 import { db } from '../db';
-import type { ExportData, ExportRoutine, ExportExercise, ExportPhoto } from '../types';
+import type { ExportData, ExportRoutine, ExportExercise } from '../types';
 
 const EXPORT_VERSION = 1;
-
-/**
- * Convert a Blob to base64 string
- */
-async function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = reader.result as string;
-      // Remove data URL prefix (e.g., "data:image/jpeg;base64,")
-      const base64 = result.split(',')[1];
-      resolve(base64);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
-/**
- * Convert base64 string to Blob
- */
-function base64ToBlob(base64: string, mimeType: string): Blob {
-  const byteString = atob(base64);
-  const arrayBuffer = new ArrayBuffer(byteString.length);
-  const uint8Array = new Uint8Array(arrayBuffer);
-
-  for (let i = 0; i < byteString.length; i++) {
-    uint8Array[i] = byteString.charCodeAt(i);
-  }
-
-  return new Blob([arrayBuffer], { type: mimeType });
-}
 
 /**
  * Get local date string in YYYY-MM-DD format
@@ -56,46 +24,26 @@ function isValidDate(dateStr: string): boolean {
  * Export all database data to JSON
  */
 export async function exportDatabase(): Promise<ExportData> {
-  const routines = await db.routines.orderBy('date').toArray();
+  const routines = await db.routines.toArray();
+  const sortedRoutines = routines.sort((a, b) => a.date.localeCompare(b.date));
   const exportRoutines: ExportRoutine[] = [];
 
-  for (const routine of routines) {
+  for (const routine of sortedRoutines) {
     const exercises = await db.exercises
       .where('routineId')
       .equals(routine.id!)
       .sortBy('order');
 
-    const exportExercises: ExportExercise[] = [];
-
-    for (const exercise of exercises) {
-      const photos = await db.exercisePhotos
-        .where('exerciseId')
-        .equals(exercise.id!)
-        .toArray();
-
-      const exportPhotos: ExportPhoto[] = [];
-
-      for (const photo of photos) {
-        const base64 = await blobToBase64(photo.blob);
-        exportPhotos.push({
-          timestamp: photo.timestamp,
-          base64,
-          mimeType: photo.blob.type,
-        });
-      }
-
-      exportExercises.push({
-        name: exercise.name,
-        repetitions: exercise.repetitions,
-        weight: exercise.weight,
-        sets: exercise.sets,
-        setsCompleted: exercise.setsCompleted,
-        time: exercise.time,
-        distance: exercise.distance,
-        order: exercise.order,
-        photos: exportPhotos,
-      });
-    }
+    const exportExercises: ExportExercise[] = exercises.map(exercise => ({
+      name: exercise.name,
+      repetitions: exercise.repetitions,
+      weight: exercise.weight,
+      sets: exercise.sets,
+      setsCompleted: exercise.setsCompleted,
+      time: exercise.time,
+      distance: exercise.distance,
+      order: exercise.order,
+    }));
 
     exportRoutines.push({
       date: routine.date,
@@ -137,48 +85,36 @@ export async function importDatabase(data: ExportData): Promise<void> {
     }
   }
 
-  // Import data in a transaction
-  await db.transaction('rw', db.routines, db.exercises, db.exercisePhotos, async () => {
-    for (const routineData of data.routines) {
-      // Get the maximum order for this date to avoid conflicts
-      const existingRoutines = await db.routines.where('date').equals(routineData.date).toArray();
-      const maxOrder = existingRoutines.length > 0
-        ? Math.max(...existingRoutines.map(r => r.order))
-        : 0;
+  // Import data
+  for (const routineData of data.routines) {
+    // Get the maximum order for this date to avoid conflicts
+    const existingRoutines = await db.routines.where('date').equals(routineData.date).toArray();
+    const maxOrder = existingRoutines.length > 0
+      ? Math.max(...existingRoutines.map(r => r.order))
+      : 0;
 
-      // Insert routine
-      const routineId = await db.routines.add({
-        date: routineData.date,
-        name: routineData.name,
-        order: maxOrder + 1,
+    // Insert routine
+    const routineId = await db.routines.add({
+      date: routineData.date,
+      name: routineData.name,
+      order: maxOrder + 1,
+    });
+
+    // Insert exercises
+    for (const exerciseData of routineData.exercises) {
+      await db.exercises.add({
+        routineId: routineId as number,
+        name: exerciseData.name,
+        repetitions: exerciseData.repetitions,
+        weight: exerciseData.weight,
+        sets: exerciseData.sets,
+        setsCompleted: exerciseData.setsCompleted,
+        time: exerciseData.time,
+        distance: exerciseData.distance,
+        order: exerciseData.order,
       });
-
-      // Insert exercises
-      for (const exerciseData of routineData.exercises) {
-        const exerciseId = await db.exercises.add({
-          routineId: routineId as number,
-          name: exerciseData.name,
-          repetitions: exerciseData.repetitions,
-          weight: exerciseData.weight,
-          sets: exerciseData.sets,
-          setsCompleted: exerciseData.setsCompleted,
-          time: exerciseData.time,
-          distance: exerciseData.distance,
-          order: exerciseData.order,
-        });
-
-        // Insert photos
-        for (const photoData of exerciseData.photos) {
-          const blob = base64ToBlob(photoData.base64, photoData.mimeType);
-          await db.exercisePhotos.add({
-            exerciseId: exerciseId as number,
-            blob,
-            timestamp: photoData.timestamp,
-          });
-        }
-      }
     }
-  });
+  }
 }
 
 /**
@@ -202,9 +138,10 @@ export function downloadJSON(data: ExportData): void {
  * Clear all data from the database
  */
 export async function clearAllData(): Promise<void> {
-  await db.transaction('rw', db.routines, db.exercises, db.exercisePhotos, async () => {
-    await db.exercisePhotos.clear();
-    await db.exercises.clear();
-    await db.routines.clear();
-  });
+  await db.exercises.toArray().then(exercises => 
+    Promise.all(exercises.map(e => db.exercises.delete(e.id!)))
+  );
+  await db.routines.toArray().then(routines => 
+    Promise.all(routines.map(r => db.routines.delete(r.id!)))
+  );
 }
