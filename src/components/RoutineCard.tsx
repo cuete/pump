@@ -10,11 +10,12 @@ import type { Routine, Exercise } from '../types';
 interface Props {
   routine: Routine;
   onDelete: (id: string) => void;
+  onUpdate?: () => void | Promise<void>;
   expanded: boolean;
   onToggle: () => void;
 }
 
-export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
+export function RoutineCard({ routine, onDelete, onUpdate, expanded, onToggle }: Props) {
   const [editing, setEditing] = useState<Exercise | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [showCopyDialog, setShowCopyDialog] = useState(false);
@@ -50,6 +51,7 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
     setRenaming(false);
     if (newName.trim() && newName !== routine.name) {
       await db.routines.update(routine.id!, { name: newName.trim() });
+      if (onUpdate) await onUpdate();
     }
   }
 
@@ -158,6 +160,7 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
             <DraggableExerciseList
               exercises={exercises}
               onTap={setEditing}
+              onUpdate={refresh}
               onReorder={handleReorder}
             />
           )}

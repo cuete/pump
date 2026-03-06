@@ -709,3 +709,38 @@ body {
   margin-left: 8px;
   white-space: nowrap;
 }
+
+
+/* Exercise Suggestions */
+.exercise-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.suggestions-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  padding: 0 4px;
+}
+
+.suggestion-item {
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 0.9rem;
+}
+
+.suggestion-item:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.suggestion-item:active {
+  transform: scale(0.98);
+}

@@ -6,10 +6,11 @@ import type { Exercise } from '../types';
 interface Props {
   exercise: Exercise;
   onTap: (exercise: Exercise) => void;
+  onUpdate?: () => void | Promise<void>;
   isDraggable?: boolean;
 }
 
-export function ExerciseRow({ exercise, onTap, isDraggable = false }: Props) {
+export function ExerciseRow({ exercise, onTap, onUpdate, isDraggable = false }: Props) {
   const {
     attributes,
     listeners,
@@ -36,6 +37,7 @@ export function ExerciseRow({ exercise, onTap, isDraggable = false }: Props) {
       sets: exercise.sets + 1,
       setsCompleted: exercise.setsCompleted + 1,
     });
+    if (onUpdate) await onUpdate();
   }
 
   async function toggleSet(index: number, e: React.MouseEvent) {
@@ -44,6 +46,7 @@ export function ExerciseRow({ exercise, onTap, isDraggable = false }: Props) {
       ? index
       : index + 1;
     await db.exercises.update(exercise.id!, { setsCompleted: newCompleted });
+    if (onUpdate) await onUpdate();
   }
 
   const style = {

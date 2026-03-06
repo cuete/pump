@@ -62,6 +62,7 @@ export function DayView({ date, onBack }: Props) {
             key={r.id}
             routine={r}
             onDelete={deleteRoutine}
+            onUpdate={refresh}
             expanded={activeId === r.id}
             onToggle={() => handleToggle(r.id!)}
           />
