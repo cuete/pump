@@ -5,7 +5,7 @@ import { db } from '../db';
 import { DraggableExerciseList } from './DraggableExerciseList';
 import { ExerciseForm } from './ExerciseForm';
 import { ExercisePicker } from './ExercisePicker';
-import type { Routine, Exercise, SavedExercise } from '../types';
+import type { Routine, Exercise } from '../types';
 
 interface Props {
   routine: Routine;
@@ -26,17 +26,17 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
     [routine.id],
   );
 
-  async function addExercise(saved: SavedExercise | null, filterText?: string) {
+  async function addExercise(name: string) {
     const order = (exercises?.length ?? 0) + 1;
     const id = await db.exercises.add({
       routineId: routine.id!,
-      name: saved?.name ?? filterText ?? '',
-      repetitions: saved?.repetitions ?? 0,
-      weight: saved?.weight ?? 0,
-      sets: saved?.sets ?? 0,
+      name: name,
+      repetitions: 0,
+      weight: 0,
+      sets: 0,
       setsCompleted: 0,
-      time: saved?.time ?? '00:00',
-      distance: saved?.distance ?? 0,
+      time: '00:00',
+      distance: 0,
       order,
     });
     const created = await db.exercises.get(id);
@@ -44,7 +44,6 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
   }
 
   async function deleteExercise(id: number) {
-    await db.exercisePhotos.where('exerciseId').equals(id).delete();
     await db.exercises.delete(id);
   }
 
@@ -103,12 +102,10 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
     const [moved] = reordered.splice(oldIndex, 1);
     reordered.splice(newIndex, 0, moved);
 
-    // Update order field for all exercises in a transaction
-    await db.transaction('rw', db.exercises, async () => {
-      for (let i = 0; i < reordered.length; i++) {
-        await db.exercises.update(reordered[i].id!, { order: i + 1 });
-      }
-    });
+    // Update order field for all exercises
+    for (let i = 0; i < reordered.length; i++) {
+      await db.exercises.update(reordered[i].id!, { order: i + 1 });
+    }
   }
 
   return (
@@ -177,9 +174,9 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
       )}
       {showPicker && (
         <ExercisePicker
-          onSelect={(saved, filterText) => {
+          onSelect={(name) => {
             setShowPicker(false);
-            addExercise(saved, filterText);
+            addExercise(name);
           }}
           onClose={() => setShowPicker(false)}
         />

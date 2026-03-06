@@ -50,8 +50,9 @@ export function MonthCalendar({ onSelectDay }: Props) {
 
   const daysWithData = useLiveQuery(async () => {
     if (allDates.length === 0) return new Set<string>();
-    const routines = await db.routines.where('date').anyOf(allDates).toArray();
-    return new Set(routines.map((r) => r.date));
+    const allRoutines = await db.routines.toArray();
+    const routines = allRoutines.filter((r: Routine) => allDates.includes(r.date));
+    return new Set(routines.map((r: Routine) => r.date));
   }, [allDates.join(',')]);
 
   const previewRoutines = useLiveQuery<Routine[]>(

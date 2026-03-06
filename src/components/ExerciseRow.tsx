@@ -1,4 +1,3 @@
-import { useLiveQuery } from 'dexie-react-hooks';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { db } from '../db';
@@ -22,10 +21,6 @@ export function ExerciseRow({ exercise, onTap, isDraggable = false }: Props) {
     id: exercise.id!,
     disabled: !isDraggable,
   });
-  const photoCount = useLiveQuery(
-    () => db.exercisePhotos.where('exerciseId').equals(exercise.id!).count(),
-    [exercise.id],
-  );
 
   const details = [
     exercise.repetitions ? `x${exercise.repetitions}` : null,
@@ -70,7 +65,6 @@ export function ExerciseRow({ exercise, onTap, isDraggable = false }: Props) {
       )}
       <span className="exercise-row-name">
         {exercise.name || 'Untitled'}
-        {(photoCount ?? 0) > 0 && <span className="photo-indicator"> 📷</span>}
       </span>
       {details && <span className="exercise-row-details">{details}</span>}
       <span className="exercise-row-sets">

@@ -40,9 +40,8 @@ export function DayView({ date, onBack }: Props) {
   async function deleteRoutine(id: number) {
     const exercises = await db.exercises.where('routineId').equals(id).toArray();
     for (const ex of exercises) {
-      await db.exercisePhotos.where('exerciseId').equals(ex.id!).delete();
+      await db.exercises.delete(ex.id!);
     }
-    await db.exercises.where('routineId').equals(id).delete();
     await db.routines.delete(id);
     if (activeId === id) setExpandedId(null);
   }
