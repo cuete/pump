@@ -23,23 +23,10 @@ jobs:
         run: npm ci
       
       - name: Run tests
-        run: npm test -- --run
+        run: npm test -- --run --reporter=verbose
         env:
           VITE_API_URL: /api
           VITE_API_KEY: test-key
-      
-      - name: Generate coverage report
-        run: npm run test:coverage -- --run
-        env:
-          VITE_API_URL: /api
-          VITE_API_KEY: test-key
-      
-      - name: Upload coverage to artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: frontend-coverage
-          path: coverage/
 
   api-tests:
     name: API Tests
@@ -62,22 +49,7 @@ jobs:
       - name: Run tests
         run: |
           cd api
-          npm test -- --run
+          npm test -- --run --reporter=verbose
         env:
           AZURE_STORAGE_CONNECTION_STRING: UseDevelopmentStorage=true
           API_SHARED_KEY: test-key
-      
-      - name: Generate coverage report
-        run: |
-          cd api
-          npm run test:coverage -- --run
-        env:
-          AZURE_STORAGE_CONNECTION_STRING: UseDevelopmentStorage=true
-          API_SHARED_KEY: test-key
-      
-      - name: Upload coverage to artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: api-coverage
-          path: api/coverage/
