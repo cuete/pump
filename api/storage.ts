@@ -130,20 +130,28 @@ export async function createRoutine(routine: Routine): Promise<Routine> {
 export async function updateRoutine(userId: string, routineId: string, updates: Partial<Routine>): Promise<void> {
   await initClients();
   
-  const entity = toTableEntity(userId, updates as Routine, routineId);
+  // For merge updates, only send the fields being updated plus partitionKey and rowKey
+  const { id, userId: _, ...fieldsToUpdate } = updates as any;
+  const entity = {
+    partitionKey: userId,
+    rowKey: routineId,
+    ...fieldsToUpdate,
+  };
+  
   await routinesClient.updateEntity(entity, 'Merge');
 }
 
 export async function deleteRoutine(userId: string, routineId: string): Promise<void> {
   await initClients();
   
-  await routinesClient.deleteEntity(userId, routineId);
-  
-  // Also delete associated exercises
+  // Delete associated exercises first (before deleting the routine)
   const exercises = await getExercises(userId, routineId);
   for (const exercise of exercises) {
     await deleteExercise(userId, exercise.id!);
   }
+  
+  // Then delete the routine
+  await routinesClient.deleteEntity(userId, routineId);
 }
 
 // Exercises operations
@@ -180,7 +188,14 @@ export async function createExercise(exercise: Exercise): Promise<Exercise> {
 export async function updateExercise(userId: string, exerciseId: string, updates: Partial<Exercise>): Promise<void> {
   await initClients();
   
-  const entity = toTableEntity(userId, updates as Exercise, exerciseId);
+  // For merge updates, only send the fields being updated plus partitionKey and rowKey
+  const { id, userId: _, ...fieldsToUpdate } = updates as any;
+  const entity = {
+    partitionKey: userId,
+    rowKey: exerciseId,
+    ...fieldsToUpdate,
+  };
+  
   await exercisesClient.updateEntity(entity, 'Merge');
 }
 
