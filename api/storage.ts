@@ -52,8 +52,11 @@ function generateId(): string {
 // Storage clients
 let routinesClient: TableClient;
 let exercisesClient: TableClient;
+let initialized = false;
 
-function initClients() {
+async function initClients() {
+  if (initialized) return;
+  
   const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
   
   if (!connectionString) {
@@ -62,11 +65,28 @@ function initClients() {
 
   routinesClient = TableClient.fromConnectionString(connectionString, 'routines');
   exercisesClient = TableClient.fromConnectionString(connectionString, 'exercises');
+  
+  // Ensure tables exist
+  try {
+    await routinesClient.createTable();
+  } catch (error: any) {
+    // Ignore if table already exists
+    if (error.statusCode !== 409) throw error;
+  }
+  
+  try {
+    await exercisesClient.createTable();
+  } catch (error: any) {
+    // Ignore if table already exists
+    if (error.statusCode !== 409) throw error;
+  }
+  
+  initialized = true;
 }
 
 // Routines operations
 export async function getRoutines(userId: string, startDate?: string, endDate?: string): Promise<Routine[]> {
-  if (!routinesClient) initClients();
+  await initClients();
   
   let filter = `PartitionKey eq '${userId}'`;
   if (startDate && endDate) {
@@ -84,7 +104,7 @@ export async function getRoutines(userId: string, startDate?: string, endDate?: 
 }
 
 export async function getRoutine(userId: string, routineId: string): Promise<Routine | null> {
-  if (!routinesClient) initClients();
+  await initClients();
   
   try {
     const entity = await routinesClient.getEntity(userId, routineId);
@@ -96,7 +116,7 @@ export async function getRoutine(userId: string, routineId: string): Promise<Rou
 }
 
 export async function createRoutine(routine: Routine): Promise<Routine> {
-  if (!routinesClient) initClients();
+  await initClients();
   
   const entity = toTableEntity(routine.userId, routine);
   await routinesClient.createEntity(entity);
@@ -108,14 +128,14 @@ export async function createRoutine(routine: Routine): Promise<Routine> {
 }
 
 export async function updateRoutine(userId: string, routineId: string, updates: Partial<Routine>): Promise<void> {
-  if (!routinesClient) initClients();
+  await initClients();
   
   const entity = toTableEntity(userId, updates as Routine, routineId);
   await routinesClient.updateEntity(entity, 'Merge');
 }
 
 export async function deleteRoutine(userId: string, routineId: string): Promise<void> {
-  if (!routinesClient) initClients();
+  await initClients();
   
   await routinesClient.deleteEntity(userId, routineId);
   
@@ -128,7 +148,7 @@ export async function deleteRoutine(userId: string, routineId: string): Promise<
 
 // Exercises operations
 export async function getExercises(userId: string, routineId?: string): Promise<Exercise[]> {
-  if (!exercisesClient) initClients();
+  await initClients();
   
   let filter = `PartitionKey eq '${userId}'`;
   if (routineId) {
@@ -146,7 +166,7 @@ export async function getExercises(userId: string, routineId?: string): Promise<
 }
 
 export async function createExercise(exercise: Exercise): Promise<Exercise> {
-  if (!exercisesClient) initClients();
+  await initClients();
   
   const entity = toTableEntity(exercise.userId, exercise);
   await exercisesClient.createEntity(entity);
@@ -158,14 +178,14 @@ export async function createExercise(exercise: Exercise): Promise<Exercise> {
 }
 
 export async function updateExercise(userId: string, exerciseId: string, updates: Partial<Exercise>): Promise<void> {
-  if (!exercisesClient) initClients();
+  await initClients();
   
   const entity = toTableEntity(userId, updates as Exercise, exerciseId);
   await exercisesClient.updateEntity(entity, 'Merge');
 }
 
 export async function deleteExercise(userId: string, exerciseId: string): Promise<void> {
-  if (!exercisesClient) initClients();
+  await initClients();
   
   await exercisesClient.deleteEntity(userId, exerciseId);
 }

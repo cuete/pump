@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { DraggableExerciseList } from './DraggableExerciseList';
 import { ExerciseForm } from './ExerciseForm';
 import { ExercisePicker } from './ExercisePicker';
+import { useExercises } from '../hooks/useExercises';
 import type { Routine, Exercise } from '../types';
 
 interface Props {
@@ -21,10 +21,7 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
   const [copyDate, setCopyDate] = useState('');
   const [showPicker, setShowPicker] = useState(false);
 
-  const exercises = useLiveQuery(
-    () => db.exercises.where('routineId').equals(routine.id!).sortBy('order'),
-    [routine.id],
-  );
+  const { exercises, refresh } = useExercises(routine.id);
 
   async function addExercise(name: string) {
     const order = (exercises?.length ?? 0) + 1;
@@ -39,12 +36,14 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
       distance: 0,
       order,
     });
+    await refresh(); // Refresh to show new exercise
     const created = await db.exercises.get(id);
     if (created) setEditing(created);
   }
 
   async function deleteExercise(id: number) {
     await db.exercises.delete(id);
+    await refresh(); // Refresh after delete
   }
 
   async function handleRename(newName: string) {
@@ -106,6 +105,8 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
     for (let i = 0; i < reordered.length; i++) {
       await db.exercises.update(reordered[i].id!, { order: i + 1 });
     }
+    
+    await refresh(); // Refresh after reorder
   }
 
   return (
@@ -170,6 +171,7 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
           exercise={editing}
           onClose={() => setEditing(null)}
           onDelete={deleteExercise}
+          onSave={refresh}
         />
       )}
       {showPicker && (

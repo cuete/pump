@@ -7,9 +7,10 @@ interface Props {
   exercise: Exercise;
   onClose: () => void;
   onDelete: (id: number) => void;
+  onSave?: () => void | Promise<void>;
 }
 
-export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
+export function ExerciseForm({ exercise, onClose, onDelete, onSave }: Props) {
   const [name, setName] = useState(exercise.name);
   const [repetitions, setRepetitions] = useState(exercise.repetitions);
   const [weight, setWeight] = useState(exercise.weight);
@@ -19,6 +20,7 @@ export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
 
   async function handleSave() {
     await db.exercises.update(exercise.id!, { name, repetitions, weight, sets, time, distance });
+    if (onSave) await onSave();
     onClose();
   }
 
