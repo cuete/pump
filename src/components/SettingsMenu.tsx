@@ -148,7 +148,6 @@ export function SettingsMenu({ onClose }: Props) {
             <p className="settings-about">
               <strong>Pump</strong> - Workout Tracker<br />
               Version {packageJson.version}<br />
-              Data stored in Azure Table Storage
             </p>
           </div>
         </div>
