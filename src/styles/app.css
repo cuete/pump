@@ -554,6 +554,41 @@ body {
   text-align: center;
 }
 
+/* Numeric input with +/- buttons */
+.numeric-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.numeric-input-group input {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-numeric {
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 700;
+  width: 36px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.btn-numeric:active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
 /* Photo Manager */
 .photo-manager {
   margin-top: 8px;
