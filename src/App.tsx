@@ -1,13 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { MonthCalendar } from './components/MonthCalendar';
 import { DayView } from './components/DayView';
+import { db } from './db';
 
 type View = { type: 'calendar' } | { type: 'day'; date: string };
 
 export default function App() {
   const { user, loading } = useAuth();
   const [view, setView] = useState<View>({ type: 'calendar' });
+
+  // Initialize DB with userId when user is authenticated
+  useEffect(() => {
+    if (user) {
+      db.setUserId(user.userId);
+    }
+  }, [user]);
 
   if (loading) {
     return <div className="loading">Loading...</div>;

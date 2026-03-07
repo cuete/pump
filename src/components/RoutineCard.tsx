@@ -1,57 +1,57 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { DraggableExerciseList } from './DraggableExerciseList';
 import { ExerciseForm } from './ExerciseForm';
 import { ExercisePicker } from './ExercisePicker';
-import type { Routine, Exercise, SavedExercise } from '../types';
+import { useExercises } from '../hooks/useExercises';
+import type { Routine, Exercise } from '../types';
 
 interface Props {
   routine: Routine;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
+  onUpdate?: () => void | Promise<void>;
   expanded: boolean;
   onToggle: () => void;
 }
 
-export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
+export function RoutineCard({ routine, onDelete, onUpdate, expanded, onToggle }: Props) {
   const [editing, setEditing] = useState<Exercise | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [copyDate, setCopyDate] = useState('');
   const [showPicker, setShowPicker] = useState(false);
 
-  const exercises = useLiveQuery(
-    () => db.exercises.where('routineId').equals(routine.id!).sortBy('order'),
-    [routine.id],
-  );
+  const { exercises, refresh } = useExercises(routine.id);
 
-  async function addExercise(saved: SavedExercise | null, filterText?: string) {
+  async function addExercise(name: string) {
     const order = (exercises?.length ?? 0) + 1;
     const id = await db.exercises.add({
       routineId: routine.id!,
-      name: saved?.name ?? filterText ?? '',
-      repetitions: saved?.repetitions ?? 0,
-      weight: saved?.weight ?? 0,
-      sets: saved?.sets ?? 0,
+      name: name,
+      repetitions: 0,
+      weight: 0,
+      sets: 0,
       setsCompleted: 0,
-      time: saved?.time ?? '00:00',
-      distance: saved?.distance ?? 0,
+      time: '00:00',
+      distance: 0,
       order,
     });
+    await refresh(); // Refresh to show new exercise
     const created = await db.exercises.get(id);
     if (created) setEditing(created);
   }
 
-  async function deleteExercise(id: number) {
-    await db.exercisePhotos.where('exerciseId').equals(id).delete();
+  async function deleteExercise(id: string) {
     await db.exercises.delete(id);
+    await refresh(); // Refresh after delete
   }
 
   async function handleRename(newName: string) {
     setRenaming(false);
     if (newName.trim() && newName !== routine.name) {
       await db.routines.update(routine.id!, { name: newName.trim() });
+      if (onUpdate) await onUpdate();
     }
   }
 
@@ -73,7 +73,7 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
     if (exercises) {
       for (const ex of exercises) {
         await db.exercises.add({
-          routineId: newRoutineId as number,
+          routineId: newRoutineId,
           name: ex.name,
           repetitions: ex.repetitions,
           weight: ex.weight,
@@ -90,7 +90,7 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
     setCopyDate('');
   }
 
-  async function handleReorder(activeId: number, overId: number) {
+  async function handleReorder(activeId: string, overId: string) {
     if (!exercises) return;
 
     const oldIndex = exercises.findIndex(ex => ex.id === activeId);
@@ -103,12 +103,12 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
     const [moved] = reordered.splice(oldIndex, 1);
     reordered.splice(newIndex, 0, moved);
 
-    // Update order field for all exercises in a transaction
-    await db.transaction('rw', db.exercises, async () => {
-      for (let i = 0; i < reordered.length; i++) {
-        await db.exercises.update(reordered[i].id!, { order: i + 1 });
-      }
-    });
+    // Update order field for all exercises
+    for (let i = 0; i < reordered.length; i++) {
+      await db.exercises.update(reordered[i].id!, { order: i + 1 });
+    }
+    
+    await refresh(); // Refresh after reorder
   }
 
   return (
@@ -160,6 +160,7 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
             <DraggableExerciseList
               exercises={exercises}
               onTap={setEditing}
+              onUpdate={refresh}
               onReorder={handleReorder}
             />
           )}
@@ -173,13 +174,14 @@ export function RoutineCard({ routine, onDelete, expanded, onToggle }: Props) {
           exercise={editing}
           onClose={() => setEditing(null)}
           onDelete={deleteExercise}
+          onSave={refresh}
         />
       )}
       {showPicker && (
         <ExercisePicker
-          onSelect={(saved, filterText) => {
+          onSelect={(name) => {
             setShowPicker(false);
-            addExercise(saved, filterText);
+            addExercise(name);
           }}
           onClose={() => setShowPicker(false)}
         />

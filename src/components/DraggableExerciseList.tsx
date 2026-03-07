@@ -18,10 +18,11 @@ import type { Exercise } from '../types';
 interface Props {
   exercises: Exercise[];
   onTap: (exercise: Exercise) => void;
-  onReorder: (activeId: number, overId: number) => void;
+  onUpdate?: () => void | Promise<void>;
+  onReorder: (activeId: string, overId: string) => void;
 }
 
-export function DraggableExerciseList({ exercises, onTap, onReorder }: Props) {
+export function DraggableExerciseList({ exercises, onTap, onUpdate, onReorder }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -41,7 +42,7 @@ export function DraggableExerciseList({ exercises, onTap, onReorder }: Props) {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      onReorder(Number(active.id), Number(over.id));
+      onReorder(String(active.id), String(over.id));
     }
   }
 
@@ -60,6 +61,7 @@ export function DraggableExerciseList({ exercises, onTap, onReorder }: Props) {
             key={ex.id}
             exercise={ex}
             onTap={onTap}
+            onUpdate={onUpdate}
             isDraggable={true}
           />
         ))}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { RoutineCard } from './RoutineCard';
+import { useRoutines } from '../hooks/useRoutines';
 
 interface Props {
   date: string;
@@ -19,12 +19,8 @@ function formatDate(dateStr: string): string {
 }
 
 export function DayView({ date, onBack }: Props) {
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-
-  const routines = useLiveQuery(
-    () => db.routines.where('date').equals(date).sortBy('order'),
-    [date],
-  );
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { routines, refresh } = useRoutines(date);
 
   // Auto-expand newest (last in order, first after reverse) on initial load
   const reversed = routines?.slice().reverse();
@@ -34,20 +30,21 @@ export function DayView({ date, onBack }: Props) {
   async function addRoutine() {
     const order = (routines?.length ?? 0) + 1;
     const id = await db.routines.add({ date, name: `Routine ${order}`, order });
-    setExpandedId(id as number);
+    await refresh(); // Refresh to show new routine
+    setExpandedId(id);
   }
 
-  async function deleteRoutine(id: number) {
+  async function deleteRoutine(id: string) {
     const exercises = await db.exercises.where('routineId').equals(id).toArray();
     for (const ex of exercises) {
-      await db.exercisePhotos.where('exerciseId').equals(ex.id!).delete();
+      await db.exercises.delete(ex.id!);
     }
-    await db.exercises.where('routineId').equals(id).delete();
     await db.routines.delete(id);
     if (activeId === id) setExpandedId(null);
+    await refresh(); // Refresh after delete
   }
 
-  function handleToggle(id: number) {
+  function handleToggle(id: string) {
     setExpandedId(activeId === id ? null : id);
   }
 
@@ -65,6 +62,7 @@ export function DayView({ date, onBack }: Props) {
             key={r.id}
             routine={r}
             onDelete={deleteRoutine}
+            onUpdate={refresh}
             expanded={activeId === r.id}
             onToggle={() => handleToggle(r.id!)}
           />

@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { db } from '../db';
-import { PhotoManager } from './PhotoManager';
 import type { Exercise } from '../types';
 
 interface Props {
   exercise: Exercise;
   onClose: () => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
+  onSave?: () => void | Promise<void>;
 }
 
-export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
+export function ExerciseForm({ exercise, onClose, onDelete, onSave }: Props) {
   const [name, setName] = useState(exercise.name);
   const [repetitions, setRepetitions] = useState(exercise.repetitions);
   const [weight, setWeight] = useState(exercise.weight);
@@ -20,21 +20,7 @@ export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
 
   async function handleSave() {
     await db.exercises.update(exercise.id!, { name, repetitions, weight, sets, time, distance });
-
-    // Sync to savedExercises library
-    if (name.trim()) {
-      const existing = await db.savedExercises.where('name').equals(name.trim()).first();
-      if (existing) {
-        await db.savedExercises.update(existing.id!, {
-          repetitions, weight, sets, time, distance, lastUsed: Date.now(),
-        });
-      } else {
-        await db.savedExercises.add({
-          name: name.trim(), repetitions, weight, sets, time, distance, lastUsed: Date.now(),
-        });
-      }
-    }
-
+    if (onSave) await onSave();
     onClose();
   }
 
@@ -106,8 +92,6 @@ export function ExerciseForm({ exercise, onClose, onDelete }: Props) {
               />
             </div>
           </div>
-
-          <PhotoManager exerciseId={exercise.id!} />
         </div>
 
         <div className="modal-actions">
