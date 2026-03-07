@@ -16,7 +16,26 @@
     },
     {
       "route": "/*",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": [
+        "authenticated"
+      ]
+    },
+    {
+      "route": "/api/*",
+      "methods": [
+        "get",
+        "post",
+        "patch",
+        "put",
+        "delete",
+        "connect",
+        "options",
+        "trace",
+        "head"
+      ],
+      "allowedRoles": [
+        "anonymous"
+      ]
     }
   ],
   "responseOverrides": {
