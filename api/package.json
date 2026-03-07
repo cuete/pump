@@ -1,0 +1,23 @@
+{
+  "name": "pump-api",
+  "version": "1.0.0",
+  "description": "Pump API with Azure Table Storage",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "func start",
+    "prestart": "npm run build",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "@azure/data-tables": "^13.2.2",
+    "@azure/functions": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vitest/ui": "^4.0.18",
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.18"
+  }
+}
